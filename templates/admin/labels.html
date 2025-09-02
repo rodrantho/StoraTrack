@@ -1,0 +1,687 @@
+{% extends "base.html" %}
+
+{% block title %}Generación de Etiquetas - StoraTrack{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0">Generación de Etiquetas</h1>
+            <p class="text-muted">Genera códigos QR, códigos de barras y etiquetas completas</p>
+        </div>
+    </div>
+
+    <!-- Tabs de navegación -->
+    <ul class="nav nav-tabs mb-4" id="labelTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="device-tab" data-bs-toggle="tab" data-bs-target="#device" type="button" role="tab">
+                <i class="fas fa-laptop me-2"></i>Dispositivos
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="location-tab" data-bs-toggle="tab" data-bs-target="#location" type="button" role="tab">
+                <i class="fas fa-map-marker-alt me-2"></i>Ubicaciones
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="batch-tab" data-bs-toggle="tab" data-bs-target="#batch" type="button" role="tab">
+                <i class="fas fa-layer-group me-2"></i>Lote
+            </button>
+        </li>
+    </ul>
+
+    <!-- Contenido de tabs -->
+    <div class="tab-content" id="labelTabsContent">
+        <!-- Tab Dispositivos -->
+        <div class="tab-pane fade show active" id="device" role="tabpanel">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Generar Etiqueta de Dispositivo</h5>
+                        </div>
+                        <div class="card-body">
+                            <form id="deviceLabelForm">
+                                <div class="mb-3">
+                                    <label for="deviceSelect" class="form-label">Seleccionar Dispositivo</label>
+                                    <select class="form-select" id="deviceSelect" required>
+                                        <option value="">Seleccione un dispositivo...</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="deviceLabelType" class="form-label">Tipo de Etiqueta</label>
+                                    <select class="form-select" id="deviceLabelType" required>
+                                        <option value="label">Etiqueta Completa</option>
+                                        <option value="qr">Solo Código QR</option>
+                                        <option value="barcode">Solo Código de Barras</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="mb-3" id="sizeOptions" style="display: none;">
+                                    <label for="labelSize" class="form-label">Tamaño (píxeles)</label>
+                                    <input type="number" class="form-control" id="labelSize" value="200" min="100" max="500">
+                                </div>
+                                
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-qrcode me-2"></i>Generar Etiqueta
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Vista Previa</h5>
+                        </div>
+                        <div class="card-body text-center" id="devicePreview">
+                            <p class="text-muted">Seleccione un dispositivo y genere una etiqueta para ver la vista previa</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab Ubicaciones -->
+        <div class="tab-pane fade" id="location" role="tabpanel">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Generar Etiqueta de Ubicación</h5>
+                        </div>
+                        <div class="card-body">
+                            <form id="locationLabelForm">
+                                <div class="mb-3">
+                                    <label for="locationSelect" class="form-label">Seleccionar Ubicación</label>
+                                    <select class="form-select" id="locationSelect" required>
+                                        <option value="">Seleccione una ubicación...</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="locationLabelType" class="form-label">Tipo de Etiqueta</label>
+                                    <select class="form-select" id="locationLabelType" required>
+                                        <option value="label">Etiqueta Completa</option>
+                                        <option value="qr">Solo Código QR</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="mb-3" id="locationSizeOptions" style="display: none;">
+                                    <label for="locationLabelSize" class="form-label">Tamaño (píxeles)</label>
+                                    <input type="number" class="form-control" id="locationLabelSize" value="200" min="100" max="500">
+                                </div>
+                                
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-qrcode me-2"></i>Generar Etiqueta
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Vista Previa</h5>
+                        </div>
+                        <div class="card-body text-center" id="locationPreview">
+                            <p class="text-muted">Seleccione una ubicación y genere una etiqueta para ver la vista previa</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab Lote -->
+        <div class="tab-pane fade" id="batch" role="tabpanel">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Generación en Lote</h5>
+                </div>
+                <div class="card-body">
+                    <form id="batchLabelForm">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="batchCompany" class="form-label">Empresa</label>
+                                    <select class="form-select" id="batchCompany">
+                                        <option value="">Todas las empresas</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="batchLocation" class="form-label">Ubicación</label>
+                                    <select class="form-select" id="batchLocation">
+                                        <option value="">Todas las ubicaciones</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="batchStatus" class="form-label">Estado</label>
+                                    <select class="form-select" id="batchStatus">
+                                        <option value="">Todos los estados</option>
+                                        <option value="stored">Almacenado</option>
+                                        <option value="in_process">En Proceso</option>
+                                        <option value="finished">Finalizado</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="batchLabelType" class="form-label">Tipo de Etiqueta</label>
+                                    <select class="form-select" id="batchLabelType" required>
+                                        <option value="label">Etiqueta Completa</option>
+                                        <option value="qr">Solo Código QR</option>
+                                        <option value="barcode">Solo Código de Barras</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="batchLimit" class="form-label">Límite de Dispositivos</label>
+                                    <input type="number" class="form-control" id="batchLimit" value="50" min="1" max="50">
+                                    <div class="form-text">Máximo 50 dispositivos por lote</div>
+                                </div>
+                                
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-layer-group me-2"></i>Generar Lote
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                    
+                    <!-- Resultados del lote -->
+                    <div id="batchResults" class="mt-4" style="display: none;">
+                        <hr>
+                        <h6>Resultados de Generación</h6>
+                        <div id="batchResultsContent"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para vista previa de etiqueta -->
+<div class="modal fade" id="labelPreviewModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Vista Previa de Etiqueta</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <div id="modalPreviewContent"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-primary" id="downloadLabel">
+                    <i class="fas fa-download me-2"></i>Descargar
+                </button>
+                <button type="button" class="btn btn-success" id="printLabel">
+                    <i class="fas fa-print me-2"></i>Imprimir
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de progreso -->
+<div class="modal fade" id="progressModal" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-body text-center">
+                <div class="spinner-border text-primary mb-3" role="status">
+                    <span class="visually-hidden">Cargando...</span>
+                </div>
+                <p id="progressText">Generando etiquetas...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    let currentLabelData = null;
+    
+    // Cargar datos iniciales
+    loadDevices();
+    loadLocations();
+    loadCompanies();
+    
+    // Event listeners para cambio de tipo de etiqueta
+    document.getElementById('deviceLabelType').addEventListener('change', function() {
+        const sizeOptions = document.getElementById('sizeOptions');
+        if (this.value === 'qr' || this.value === 'barcode') {
+            sizeOptions.style.display = 'block';
+        } else {
+            sizeOptions.style.display = 'none';
+        }
+    });
+    
+    document.getElementById('locationLabelType').addEventListener('change', function() {
+        const sizeOptions = document.getElementById('locationSizeOptions');
+        if (this.value === 'qr') {
+            sizeOptions.style.display = 'block';
+        } else {
+            sizeOptions.style.display = 'none';
+        }
+    });
+    
+    // Form de dispositivo
+    document.getElementById('deviceLabelForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const deviceId = document.getElementById('deviceSelect').value;
+        const labelType = document.getElementById('deviceLabelType').value;
+        const size = document.getElementById('labelSize').value;
+        
+        if (!deviceId) {
+            showAlert('Por favor seleccione un dispositivo', 'warning');
+            return;
+        }
+        
+        await generateDeviceLabel(deviceId, labelType, size);
+    });
+    
+    // Form de ubicación
+    document.getElementById('locationLabelForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const locationId = document.getElementById('locationSelect').value;
+        const labelType = document.getElementById('locationLabelType').value;
+        const size = document.getElementById('locationLabelSize').value;
+        
+        if (!locationId) {
+            showAlert('Por favor seleccione una ubicación', 'warning');
+            return;
+        }
+        
+        await generateLocationLabel(locationId, labelType, size);
+    });
+    
+    // Form de lote
+    document.getElementById('batchLabelForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const company = document.getElementById('batchCompany').value;
+        const location = document.getElementById('batchLocation').value;
+        const status = document.getElementById('batchStatus').value;
+        const labelType = document.getElementById('batchLabelType').value;
+        const limit = document.getElementById('batchLimit').value;
+        
+        await generateBatchLabels(company, location, status, labelType, limit);
+    });
+    
+    // Botones del modal
+    document.getElementById('downloadLabel').addEventListener('click', function() {
+        if (currentLabelData) {
+            downloadImage(currentLabelData.image, `label_${currentLabelData.name || 'item'}.png`);
+        }
+    });
+    
+    document.getElementById('printLabel').addEventListener('click', function() {
+        if (currentLabelData) {
+            printImage(currentLabelData.image);
+        }
+    });
+    
+    // Funciones
+    async function loadDevices() {
+        try {
+            const response = await fetch('/api/devices');
+            const data = await response.json();
+            
+            const select = document.getElementById('deviceSelect');
+            select.innerHTML = '<option value="">Seleccione un dispositivo...</option>';
+            
+            data.devices.forEach(device => {
+                const option = document.createElement('option');
+                option.value = device.id;
+                option.textContent = `${device.name} (${device.serial_number || 'Sin S/N'})`;
+                select.appendChild(option);
+            });
+        } catch (error) {
+            console.error('Error cargando dispositivos:', error);
+        }
+    }
+    
+    async function loadLocations() {
+        try {
+            const response = await fetch('/api/locations');
+            const data = await response.json();
+            
+            const select = document.getElementById('locationSelect');
+            select.innerHTML = '<option value="">Seleccione una ubicación...</option>';
+            
+            const batchSelect = document.getElementById('batchLocation');
+            batchSelect.innerHTML = '<option value="">Todas las ubicaciones</option>';
+            
+            data.locations.forEach(location => {
+                const option1 = document.createElement('option');
+                option1.value = location.id;
+                option1.textContent = location.name;
+                select.appendChild(option1);
+                
+                const option2 = document.createElement('option');
+                option2.value = location.id;
+                option2.textContent = location.name;
+                batchSelect.appendChild(option2);
+            });
+        } catch (error) {
+            console.error('Error cargando ubicaciones:', error);
+        }
+    }
+    
+    async function loadCompanies() {
+        try {
+            const response = await fetch('/api/companies');
+            const data = await response.json();
+            
+            const select = document.getElementById('batchCompany');
+            select.innerHTML = '<option value="">Todas las empresas</option>';
+            
+            data.companies.forEach(company => {
+                const option = document.createElement('option');
+                option.value = company.id;
+                option.textContent = company.name;
+                select.appendChild(option);
+            });
+        } catch (error) {
+            console.error('Error cargando empresas:', error);
+        }
+    }
+    
+    async function generateDeviceLabel(deviceId, labelType, size) {
+        showProgress('Generando etiqueta...');
+        
+        try {
+            let url;
+            if (labelType === 'qr') {
+                url = `/api/labels/device/${deviceId}/qr?size=${size}`;
+            } else if (labelType === 'barcode') {
+                url = `/api/labels/device/${deviceId}/barcode?width=${size * 1.5}&height=${size * 0.5}`;
+            } else {
+                url = `/api/labels/device/${deviceId}/label`;
+            }
+            
+            const response = await fetch(url);
+            const data = await response.json();
+            
+            if (response.ok) {
+                const imageKey = labelType === 'barcode' ? 'barcode' : (labelType === 'qr' ? 'qr_code' : 'label');
+                displayPreview(data[imageKey], 'devicePreview');
+                
+                // Obtener nombre del dispositivo
+                const deviceSelect = document.getElementById('deviceSelect');
+                const deviceName = deviceSelect.options[deviceSelect.selectedIndex].text;
+                
+                currentLabelData = {
+                    image: data[imageKey],
+                    name: `device_${deviceId}`,
+                    type: labelType
+                };
+            } else {
+                showAlert(data.detail || 'Error generando etiqueta', 'danger');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            showAlert('Error generando etiqueta', 'danger');
+        } finally {
+            hideProgress();
+        }
+    }
+    
+    async function generateLocationLabel(locationId, labelType, size) {
+        showProgress('Generando etiqueta...');
+        
+        try {
+            let url;
+            if (labelType === 'qr') {
+                url = `/api/labels/location/${locationId}/qr?size=${size}`;
+            } else {
+                url = `/api/labels/location/${locationId}/label`;
+            }
+            
+            const response = await fetch(url);
+            const data = await response.json();
+            
+            if (response.ok) {
+                const imageKey = labelType === 'qr' ? 'qr_code' : 'label';
+                displayPreview(data[imageKey], 'locationPreview');
+                
+                currentLabelData = {
+                    image: data[imageKey],
+                    name: `location_${locationId}`,
+                    type: labelType
+                };
+            } else {
+                showAlert(data.detail || 'Error generando etiqueta', 'danger');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            showAlert('Error generando etiqueta', 'danger');
+        } finally {
+            hideProgress();
+        }
+    }
+    
+    async function generateBatchLabels(company, location, status, labelType, limit) {
+        showProgress('Obteniendo dispositivos...');
+        
+        try {
+            // Primero obtener lista de dispositivos con filtros
+            let devicesUrl = '/api/devices?';
+            const params = new URLSearchParams();
+            
+            if (company) params.append('company_id', company);
+            if (location) params.append('location_id', location);
+            if (status) params.append('status', status);
+            params.append('limit', limit);
+            
+            devicesUrl += params.toString();
+            
+            const devicesResponse = await fetch(devicesUrl);
+            const devicesData = await devicesResponse.json();
+            
+            if (!devicesResponse.ok) {
+                showAlert(devicesData.detail || 'Error obteniendo dispositivos', 'danger');
+                return;
+            }
+            
+            const deviceIds = devicesData.devices.map(d => d.id).join(',');
+            
+            if (!deviceIds) {
+                showAlert('No se encontraron dispositivos con los filtros especificados', 'warning');
+                return;
+            }
+            
+            // Generar etiquetas en lote
+            showProgress('Generando etiquetas en lote...');
+            
+            const batchUrl = `/api/labels/batch/devices?device_ids=${deviceIds}&label_type=${labelType}`;
+            const batchResponse = await fetch(batchUrl);
+            const batchData = await batchResponse.json();
+            
+            if (batchResponse.ok) {
+                displayBatchResults(batchData);
+            } else {
+                showAlert(batchData.detail || 'Error generando etiquetas en lote', 'danger');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            showAlert('Error generando etiquetas en lote', 'danger');
+        } finally {
+            hideProgress();
+        }
+    }
+    
+    function displayPreview(imageData, containerId) {
+        const container = document.getElementById(containerId);
+        container.innerHTML = `
+            <img src="${imageData}" class="img-fluid" style="max-width: 100%; cursor: pointer;" 
+                 onclick="showLabelModal('${imageData}')">
+            <div class="mt-2">
+                <button class="btn btn-sm btn-outline-primary me-2" onclick="downloadImage('${imageData}', 'label.png')">
+                    <i class="fas fa-download"></i> Descargar
+                </button>
+                <button class="btn btn-sm btn-outline-success" onclick="printImage('${imageData}')">
+                    <i class="fas fa-print"></i> Imprimir
+                </button>
+            </div>
+        `;
+    }
+    
+    function displayBatchResults(data) {
+        const container = document.getElementById('batchResultsContent');
+        const resultsDiv = document.getElementById('batchResults');
+        
+        let html = `
+            <div class="alert alert-info">
+                <strong>Resumen:</strong> ${data.total_generated} de ${data.total_requested} etiquetas generadas exitosamente.
+                ${data.total_errors > 0 ? `<br><strong>Errores:</strong> ${data.total_errors}` : ''}
+            </div>
+        `;
+        
+        if (data.results.length > 0) {
+            html += '<div class="row">';
+            
+            data.results.forEach((result, index) => {
+                if (result.image) {
+                    html += `
+                        <div class="col-md-3 mb-3">
+                            <div class="card">
+                                <div class="card-body text-center">
+                                    <h6 class="card-title">${result.device_name}</h6>
+                                    <img src="${result.image}" class="img-fluid mb-2" style="max-height: 150px; cursor: pointer;" 
+                                         onclick="showLabelModal('${result.image}')">
+                                    <div>
+                                        <button class="btn btn-sm btn-outline-primary me-1" 
+                                                onclick="downloadImage('${result.image}', 'device_${result.device_id}_label.png')">
+                                            <i class="fas fa-download"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-success" 
+                                                onclick="printImage('${result.image}')">
+                                            <i class="fas fa-print"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                } else if (result.error) {
+                    html += `
+                        <div class="col-md-3 mb-3">
+                            <div class="card border-danger">
+                                <div class="card-body text-center">
+                                    <h6 class="card-title text-danger">${result.device_name}</h6>
+                                    <p class="text-danger small">${result.error}</p>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+            
+            html += '</div>';
+            
+            // Botón para descargar todas
+            html += `
+                <div class="text-center mt-3">
+                    <button class="btn btn-primary" onclick="downloadAllBatchLabels()">
+                        <i class="fas fa-download me-2"></i>Descargar Todas las Etiquetas
+                    </button>
+                </div>
+            `;
+        }
+        
+        container.innerHTML = html;
+        resultsDiv.style.display = 'block';
+        
+        // Guardar resultados para descarga masiva
+        window.batchResults = data.results.filter(r => r.image);
+    }
+    
+    function showProgress(text) {
+        document.getElementById('progressText').textContent = text;
+        new bootstrap.Modal(document.getElementById('progressModal')).show();
+    }
+    
+    function hideProgress() {
+        const modal = bootstrap.Modal.getInstance(document.getElementById('progressModal'));
+        if (modal) modal.hide();
+    }
+    
+    function showAlert(message, type) {
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+        alertDiv.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        
+        const container = document.querySelector('.container-fluid');
+        container.insertBefore(alertDiv, container.firstChild);
+        
+        setTimeout(() => {
+            alertDiv.remove();
+        }, 5000);
+    }
+});
+
+// Funciones globales
+function showLabelModal(imageData) {
+    document.getElementById('modalPreviewContent').innerHTML = `
+        <img src="${imageData}" class="img-fluid" style="max-width: 100%;">
+    `;
+    
+    currentLabelData = { image: imageData };
+    new bootstrap.Modal(document.getElementById('labelPreviewModal')).show();
+}
+
+function downloadImage(imageData, filename) {
+    const link = document.createElement('a');
+    link.href = imageData;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+function printImage(imageData) {
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+        <html>
+            <head>
+                <title>Imprimir Etiqueta</title>
+                <style>
+                    body { margin: 0; padding: 20px; text-align: center; }
+                    img { max-width: 100%; height: auto; }
+                    @media print {
+                        body { margin: 0; padding: 0; }
+                    }
+                </style>
+            </head>
+            <body>
+                <img src="${imageData}" onload="window.print(); window.close();">
+            </body>
+        </html>
+    `);
+    printWindow.document.close();
+}
+
+function downloadAllBatchLabels() {
+    if (window.batchResults && window.batchResults.length > 0) {
+        window.batchResults.forEach((result, index) => {
+            setTimeout(() => {
+                downloadImage(result.image, `device_${result.device_id}_label.png`);
+            }, index * 100); // Pequeño delay entre descargas
+        });
+    }
+}
+</script>
+{% endblock %}

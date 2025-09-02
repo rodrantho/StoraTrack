@@ -1,0 +1,682 @@
+{% extends "base.html" %}
+
+{% block title %}{{ device.name }} - Detalle del Equipo{% endblock %}
+
+{% block page_header %}
+<div class="d-flex justify-content-between align-items-center">
+    <div>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/admin/dashboard">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="/admin/devices">Equipos</a></li>
+                <li class="breadcrumb-item active">{{ device.name }}</li>
+            </ol>
+        </nav>
+        <h1><i class="bi bi-laptop"></i> {{ device.name }}</h1>
+        <p class="text-muted mb-0">{{ device.company.name }} | {{ device.status.replace('_', ' ').title() }}</p>
+    </div>
+    <div class="btn-group">
+        <button class="btn btn-outline-primary" onclick="generateQR({{ device.id }})">
+            <i class="bi bi-qr-code"></i> QR
+        </button>
+        <button class="btn btn-outline-info" onclick="printLabel({{ device.id }})">
+            <i class="bi bi-printer"></i> Etiqueta
+        </button>
+        <a href="/admin/devices/{{ device.id }}/edit" class="btn btn-warning">
+            <i class="bi bi-pencil"></i> Editar
+        </a>
+        {% if current_user.role == 'SUPERADMIN' %}
+        <button class="btn btn-danger" onclick="confirmDeleteDevice({{ device.id }}, '{{ device.name }}')">
+            <i class="bi bi-trash"></i> Eliminar
+        </button>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <!-- Información General -->
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-info-circle"></i> Información General</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Nombre del Equipo</label>
+                            <p class="form-control-plaintext">{{ device.name }}</p>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Empresa</label>
+                            <p class="form-control-plaintext">{{ device.company.name }}</p>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Estado Actual</label>
+                            <p class="form-control-plaintext">
+                                <span class="badge bg-{{ get_status_color(device.status) }} fs-6">
+                                    {{ device.status.replace('_', ' ').title() }}
+                                </span>
+                            </p>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Ubicación Actual</label>
+                            <p class="form-control-plaintext">
+                                {% if device.location %}
+                                <i class="bi bi-geo-alt text-primary"></i> {{ device.location.full_path or device.location.name }}
+                                {% else %}
+                                <span class="text-muted">Sin ubicación asignada</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Número de Serie</label>
+                            <p class="form-control-plaintext">{{ device.serial_number or 'No especificado' }}</p>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Marca</label>
+                            <p class="form-control-plaintext">{{ device.brand or 'No especificada' }}</p>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Modelo</label>
+                            <p class="form-control-plaintext">{{ device.model or 'No especificado' }}</p>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Condición</label>
+                            <p class="form-control-plaintext">
+                                {% if device.condition %}
+                                <span class="badge bg-{{ get_condition_color(device.condition) }}">
+                                    {{ device.condition.title() }}
+                                </span>
+                                {% else %}
+                                <span class="text-muted">No especificada</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                    {% if device.description %}
+                    <div class="col-12">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Descripción</label>
+                            <p class="form-control-plaintext">{{ device.description }}</p>
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% if device.tags %}
+                    <div class="col-12">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Tags</label>
+                            <p class="form-control-plaintext">
+                                {% for tag in device.tags %}
+                                <span class="badge bg-{{ tag.color }} me-1">
+                                    <i class="bi bi-tag"></i> {{ tag.name }}
+                                </span>
+                                {% endfor %}
+                            </p>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Historial de Movimientos -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-clock-history"></i> Historial de Movimientos</h5>
+                    <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addMovementModal">
+                        <i class="bi bi-plus-lg"></i> Agregar Movimiento
+                    </button>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                {% if device.movements %}
+                <div class="timeline">
+                    {% for movement in device.movements %}
+                    <div class="timeline-item">
+                        <div class="timeline-marker bg-{{ get_status_color(movement.new_status) }}"></div>
+                        <div class="timeline-content">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h6 class="mb-1">
+                                        {% if movement.old_status != movement.new_status %}
+                                        {{ movement.old_status.replace('_', ' ').title() if movement.old_status else 'Inicial' }} 
+                                        <i class="bi bi-arrow-right"></i> 
+                                        {{ movement.new_status.replace('_', ' ').title() }}
+                                        {% else %}
+                                        Cambio de ubicación
+                                        {% endif %}
+                                    </h6>
+                                    {% if movement.old_location_id != movement.new_location_id %}
+                                    <p class="mb-1 text-muted">
+                                        <i class="bi bi-geo-alt"></i> 
+                                        {{ movement.old_location.name if movement.old_location else 'Sin ubicación' }} 
+                                        <i class="bi bi-arrow-right"></i> 
+                                        {{ movement.new_location.name if movement.new_location else 'Sin ubicación' }}
+                                    </p>
+                                    {% endif %}
+                                    {% if movement.notes %}
+                                    <p class="mb-1"><strong>Notas:</strong> {{ movement.notes }}</p>
+                                    {% endif %}
+                                    <small class="text-muted">
+                                        Por: {{ movement.created_by.full_name }} | 
+                                        {{ movement.created_at.strftime('%d/%m/%Y %H:%M') }}
+                                    </small>
+                                </div>
+                                <div class="text-end">
+                                    <small class="text-muted">{{ movement.created_at.strftime('%d/%m/%Y') }}</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="bi bi-clock-history text-muted" style="font-size: 2rem;"></i>
+                    <h6 class="text-muted mt-2">No hay movimientos registrados</h6>
+                    <p class="text-muted">Los movimientos aparecerán aquí cuando se registren cambios.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Panel Lateral -->
+    <div class="col-md-4">
+        <!-- Fechas y Costos -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-calendar-event"></i> Fechas y Costos</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Fecha de Ingreso</label>
+                    <p class="form-control-plaintext">{{ device.entry_date.strftime('%d/%m/%Y') }}</p>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Días Almacenado</label>
+                    <p class="form-control-plaintext">
+                        <span class="badge bg-info fs-6">{{ device.days_stored }} días</span>
+                    </p>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Costo Base</label>
+                    <p class="form-control-plaintext">${{ "%.2f"|format(device.base_cost) }}</p>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Costo Diario</label>
+                    <p class="form-control-plaintext">${{ "%.2f"|format(device.daily_cost) }}</p>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Costo Actual</label>
+                    <p class="form-control-plaintext">
+                        <span class="badge bg-success fs-5">${{ "%.2f"|format(device.current_cost) }}</span>
+                    </p>
+                </div>
+                <div class="d-grid">
+                    <button class="btn btn-outline-primary" onclick="calculateCost()">
+                        <i class="bi bi-calculator"></i> Calcular Costo
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Configuración de Costos -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-gear"></i> Configuración</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Moneda</label>
+                    <p class="form-control-plaintext">{{ device.company.currency }}</p>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">IVA</label>
+                    <p class="form-control-plaintext">{{ device.company.iva_percent }}%</p>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Incluir IVA</label>
+                    <p class="form-control-plaintext">
+                        <span class="badge bg-{{ 'success' if device.company.include_iva else 'secondary' }}">
+                            {{ 'Sí' if device.company.include_iva else 'No' }}
+                        </span>
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Códigos de Identificación -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-upc-scan"></i> Identificación</h5>
+            </div>
+            <div class="card-body text-center">
+                <div class="mb-3">
+                    <div id="qrcode-{{ device.id }}" class="d-inline-block"></div>
+                </div>
+                <div class="d-grid gap-2">
+                    <button class="btn btn-outline-primary" onclick="generateQR({{ device.id }})">
+                        <i class="bi bi-qr-code"></i> Generar QR
+                    </button>
+                    <button class="btn btn-outline-secondary" onclick="printLabel({{ device.id }})">
+                        <i class="bi bi-printer"></i> Imprimir Etiqueta
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Información del Sistema -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-info-square"></i> Sistema</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-2">
+                    <small class="text-muted"><strong>ID:</strong> {{ device.id }}</small>
+                </div>
+                <div class="mb-2">
+                    <small class="text-muted"><strong>Creado:</strong> {{ device.created_at.strftime('%d/%m/%Y %H:%M') }}</small>
+                </div>
+                <div class="mb-2">
+                    <small class="text-muted"><strong>Actualizado:</strong> {{ device.updated_at.strftime('%d/%m/%Y %H:%M') }}</small>
+                </div>
+                {% if device.created_by %}
+                <div class="mb-2">
+                    <small class="text-muted"><strong>Creado por:</strong> {{ device.created_by.full_name }}</small>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Agregar Movimiento -->
+<div class="modal fade" id="addMovementModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-plus-lg"></i> Agregar Movimiento</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="addMovementForm">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Nuevo Estado</label>
+                        <select class="form-select" name="new_status" required>
+                            <option value="">Seleccionar estado...</option>
+                            <option value="INGRESADO">Ingresado</option>
+                            <option value="ESPERANDO_A_RECIBIR">Esperando a Recibir</option>
+                            <option value="ALMACENADO">Almacenado</option>
+                            <option value="ENVIADO">Enviado</option>
+                            <option value="RETIRADO">Retirado</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Nueva Ubicación</label>
+                        <select class="form-select" name="new_location_id">
+                            <option value="">Sin ubicación</option>
+                            {% for location in locations %}
+                            <option value="{{ location.id }}">{{ location.full_path or location.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Notas</label>
+                        <textarea class="form-control" name="notes" rows="3" placeholder="Notas sobre este movimiento..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check-lg"></i> Agregar Movimiento
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Calcular Costo -->
+<div class="modal fade" id="calculateCostModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-calculator"></i> Cálculo de Costo</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="costCalculationBody">
+                <!-- Contenido dinámico -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-primary" onclick="downloadPDF()">
+                    <i class="bi bi-file-pdf"></i> Descargar PDF
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal QR Code -->
+<div class="modal fade" id="qrModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-qr-code"></i> Código QR</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center" id="qrModalBody">
+                <!-- Contenido dinámico -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-primary" onclick="downloadQR()">
+                    <i class="bi bi-download"></i> Descargar QR
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.timeline {
+    position: relative;
+    padding: 20px 0;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: 20px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: #dee2e6;
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 30px;
+    padding-left: 50px;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: 12px;
+    top: 5px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 3px solid white;
+    box-shadow: 0 0 0 2px #dee2e6;
+}
+
+.timeline-content {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 15px;
+}
+
+.timeline-content h6 {
+    color: #495057;
+    margin-bottom: 5px;
+}
+
+.badge.fs-5 {
+    font-size: 1.1rem !important;
+}
+
+.badge.fs-6 {
+    font-size: 0.9rem !important;
+}
+
+#qrcode-{{ device.id }} canvas {
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+<script>
+let currentQRData = null;
+
+// Agregar movimiento
+document.getElementById('addMovementForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const data = Object.fromEntries(formData.entries());
+    
+    fetch(`/admin/devices/{{ device.id }}/movements`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('Movimiento agregado exitosamente', 'success');
+            bootstrap.Modal.getInstance(document.getElementById('addMovementModal')).hide();
+            location.reload();
+        } else {
+            showAlert(data.message || 'Error al agregar el movimiento', 'danger');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showAlert('Error al agregar el movimiento', 'danger');
+    });
+});
+
+function calculateCost() {
+    fetch(`/api/devices/{{ device.id }}/cost`)
+        .then(response => response.json())
+        .then(data => {
+            const modalBody = document.getElementById('costCalculationBody');
+            modalBody.innerHTML = `
+                <div class="row g-3">
+                    <div class="col-12">
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <h3 class="text-primary mb-0">$${data.total_cost.toFixed(2)}</h3>
+                                <small class="text-muted">Costo Total Actual</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-body text-center">
+                                <h5 class="text-info">$${data.base_cost.toFixed(2)}</h5>
+                                <small class="text-muted">Costo Base</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-body text-center">
+                                <h5 class="text-warning">$${data.storage_cost.toFixed(2)}</h5>
+                                <small class="text-muted">Costo Almacenamiento</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <tr>
+                                    <td><strong>Días almacenado:</strong></td>
+                                    <td>${data.days_stored} días</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Costo diario:</strong></td>
+                                    <td>$${data.daily_cost.toFixed(2)}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Fecha de ingreso:</strong></td>
+                                    <td>${new Date(data.entry_date).toLocaleDateString('es-UY')}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Fecha de cálculo:</strong></td>
+                                    <td>${new Date().toLocaleDateString('es-UY')}</td>
+                                </tr>
+                                ${data.iva_amount > 0 ? `
+                                <tr>
+                                    <td><strong>Subtotal:</strong></td>
+                                    <td>$${data.subtotal.toFixed(2)}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>IVA (${data.iva_percent}%):</strong></td>
+                                    <td>$${data.iva_amount.toFixed(2)}</td>
+                                </tr>
+                                ` : ''}
+                                <tr class="table-primary">
+                                    <td><strong>Total:</strong></td>
+                                    <td><strong>$${data.total_cost.toFixed(2)}</strong></td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            new bootstrap.Modal(document.getElementById('calculateCostModal')).show();
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert('Error al calcular el costo', 'danger');
+        });
+}
+
+function generateQR(deviceId) {
+    const qrData = `${window.location.origin}/device/${deviceId}`;
+    currentQRData = qrData;
+    
+    // Generar QR en el modal
+    const modalBody = document.getElementById('qrModalBody');
+    modalBody.innerHTML = `
+        <div class="mb-3">
+            <div id="qrcode-modal" class="d-inline-block"></div>
+        </div>
+        <p class="text-muted">Código QR para: <strong>{{ device.name }}</strong></p>
+        <p class="small text-muted">${qrData}</p>
+    `;
+    
+    QRCode.toCanvas(document.getElementById('qrcode-modal'), qrData, {
+        width: 200,
+        margin: 2,
+        color: {
+            dark: '#000000',
+            light: '#FFFFFF'
+        }
+    });
+    
+    // También generar en el panel lateral
+    const sidebarQR = document.getElementById('qrcode-{{ device.id }}');
+    sidebarQR.innerHTML = '';
+    QRCode.toCanvas(sidebarQR, qrData, {
+        width: 150,
+        margin: 2,
+        color: {
+            dark: '#000000',
+            light: '#FFFFFF'
+        }
+    });
+    
+    new bootstrap.Modal(document.getElementById('qrModal')).show();
+}
+
+function downloadQR() {
+    if (!currentQRData) return;
+    
+    QRCode.toDataURL(currentQRData, {
+        width: 400,
+        margin: 2,
+        color: {
+            dark: '#000000',
+            light: '#FFFFFF'
+        }
+    }, function(err, url) {
+        if (err) {
+            console.error('Error generating QR:', err);
+            return;
+        }
+        
+        const link = document.createElement('a');
+        link.download = `qr-{{ device.name }}-${Date.now()}.png`;
+        link.href = url;
+        link.click();
+    });
+}
+
+function printLabel(deviceId) {
+    // Abrir ventana de impresión con etiqueta
+    const printWindow = window.open(`/admin/devices/${deviceId}/label`, '_blank');
+    printWindow.onload = function() {
+        printWindow.print();
+    };
+}
+
+function downloadPDF() {
+    window.open(`/api/devices/{{ device.id }}/cost-report?format=pdf`, '_blank');
+}
+
+function confirmDeleteDevice(deviceId, deviceName) {
+    if (confirm(`¿Estás seguro de que deseas eliminar el equipo "${deviceName}"?\n\nEsta acción eliminará también todo el historial de movimientos y no se puede deshacer.`)) {
+        deleteDevice(deviceId);
+    }
+}
+
+function deleteDevice(deviceId) {
+    fetch(`/admin/devices/${deviceId}`, {
+        method: 'DELETE'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('Equipo eliminado exitosamente', 'success');
+            window.location.href = '/admin/devices';
+        } else {
+            showAlert(data.message || 'Error al eliminar el equipo', 'danger');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showAlert('Error al eliminar el equipo', 'danger');
+    });
+}
+
+// Generar QR automáticamente al cargar la página
+document.addEventListener('DOMContentLoaded', function() {
+    generateQR({{ device.id }});
+});
+</script>
+{% endblock %}
+
+{% macro get_status_color(status) %}
+{% if status == 'INGRESADO' %}primary
+{% elif status == 'ESPERANDO_A_RECIBIR' %}warning
+{% elif status == 'ALMACENADO' %}success
+{% elif status == 'ENVIADO' %}info
+{% elif status == 'RETIRADO' %}secondary
+{% else %}secondary{% endif %}
+{% endmacro %}
+
+{% macro get_condition_color(condition) %}
+{% if condition == 'nuevo' %}success
+{% elif condition == 'usado' %}warning
+{% elif condition == 'dañado' %}danger
+{% else %}secondary{% endif %}
+{% endmacro %}

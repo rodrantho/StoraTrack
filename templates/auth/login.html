@@ -1,0 +1,267 @@
+{% extends "base.html" %}
+
+{% block title %}Iniciar Sesión - StoraTrack{% endblock %}
+
+{% block extra_head %}
+<style>
+    .login-container {
+        min-height: 80vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .login-card {
+        max-width: 400px;
+        width: 100%;
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    }
+    .login-header {
+        background: linear-gradient(135deg, #007bff, #0056b3);
+        color: white;
+        text-align: center;
+        padding: 2rem 1rem 1rem;
+        border-radius: 0.375rem 0.375rem 0 0;
+    }
+    .login-body {
+        padding: 2rem;
+    }
+    .form-floating {
+        margin-bottom: 1rem;
+    }
+    .btn-login {
+        width: 100%;
+        padding: 0.75rem;
+        font-weight: 500;
+    }
+    .divider {
+        text-align: center;
+        margin: 1.5rem 0;
+        position: relative;
+    }
+    .divider::before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 0;
+        right: 0;
+        height: 1px;
+        background: #dee2e6;
+    }
+    .divider span {
+        background: white;
+        padding: 0 1rem;
+        color: #6c757d;
+        font-size: 0.875rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="login-container">
+    <div class="login-card card border-0">
+        <div class="login-header">
+            <i class="bi bi-box-seam" style="font-size: 3rem;"></i>
+            <h3 class="mt-2 mb-0">StoraTrack</h3>
+            <p class="mb-0 opacity-75">Sistema de Gestión de Almacenamiento</p>
+        </div>
+        
+        <div class="login-body">
+            <!-- Login Form -->
+            <form method="post" action="/auth/login" id="loginForm">
+                <div class="form-floating">
+                    <input type="email" class="form-control" id="email" name="email" 
+                           placeholder="correo@ejemplo.com" required>
+                    <label for="email">
+                        <i class="bi bi-envelope me-2"></i>
+                        Correo Electrónico
+                    </label>
+                </div>
+                
+                <div class="form-floating">
+                    <input type="password" class="form-control" id="password" name="password" 
+                           placeholder="Contraseña" required>
+                    <label for="password">
+                        <i class="bi bi-lock me-2"></i>
+                        Contraseña
+                    </label>
+                </div>
+                
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" id="remember_me" name="remember_me">
+                    <label class="form-check-label" for="remember_me">
+                        Recordarme
+                    </label>
+                </div>
+                
+                <button type="submit" class="btn btn-primary btn-login">
+                    <i class="bi bi-box-arrow-in-right me-2"></i>
+                    Iniciar Sesión
+                    <span class="htmx-indicator spinner-border spinner-border-sm ms-2" role="status"></span>
+                </button>
+            </form>
+            
+            <!-- Demo Credentials -->
+            <div class="divider">
+                <span>Credenciales de Prueba</span>
+            </div>
+            
+            <div class="row g-2">
+                <div class="col-12">
+                    <button type="button" class="btn btn-outline-secondary btn-sm w-100" 
+                            onclick="fillCredentials('admin@admin.com', 'admin')">
+                        <i class="bi bi-person-gear me-1"></i>
+                        Superadmin
+                    </button>
+                </div>
+                <div class="col-6">
+                    <button type="button" class="btn btn-outline-info btn-sm w-100" 
+                            onclick="fillCredentials('staff@demo.com', 'staff123')">
+                        <i class="bi bi-person-badge me-1"></i>
+                        Staff
+                    </button>
+                </div>
+                <div class="col-6">
+                    <button type="button" class="btn btn-outline-success btn-sm w-100" 
+                            onclick="fillCredentials('cliente@demo.com', 'cliente123')">
+                        <i class="bi bi-person me-1"></i>
+                        Cliente
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Additional Info -->
+            <div class="mt-4 text-center">
+                <small class="text-muted">
+                    <i class="bi bi-info-circle me-1"></i>
+                    ¿Problemas para acceder? Contacta al administrador
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- API Login Modal (for developers) -->
+<div class="modal fade" id="apiLoginModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-code-slash me-2"></i>
+                    API Login
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted">Obtén un token JWT para acceso a la API:</p>
+                <form id="apiLoginForm">
+                    <div class="mb-3">
+                        <label for="apiEmail" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="apiEmail" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="apiPassword" class="form-label">Contraseña</label>
+                        <input type="password" class="form-control" id="apiPassword" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        Obtener Token
+                    </button>
+                </form>
+                <div id="apiResult" class="mt-3" style="display: none;">
+                    <label class="form-label">Token JWT:</label>
+                    <textarea class="form-control" id="tokenOutput" rows="4" readonly></textarea>
+                    <button type="button" class="btn btn-sm btn-outline-secondary mt-2" 
+                            onclick="copyToken()">
+                        <i class="bi bi-clipboard me-1"></i>
+                        Copiar Token
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- API Access Button (bottom right) -->
+<div class="position-fixed bottom-0 end-0 p-3">
+    <button type="button" class="btn btn-outline-dark btn-sm" 
+            data-bs-toggle="modal" data-bs-target="#apiLoginModal"
+            title="Acceso API">
+        <i class="bi bi-code-slash"></i>
+    </button>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    // Fill demo credentials
+    function fillCredentials(email, password) {
+        document.getElementById('email').value = email;
+        document.getElementById('password').value = password;
+        document.getElementById('email').focus();
+    }
+    
+    // API Login functionality
+    document.getElementById('apiLoginForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const email = document.getElementById('apiEmail').value;
+        const password = document.getElementById('apiPassword').value;
+        
+        try {
+            const response = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ email, password })
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok) {
+                document.getElementById('tokenOutput').value = data.access_token;
+                document.getElementById('apiResult').style.display = 'block';
+            } else {
+                alert('Error: ' + (data.detail || 'Login failed'));
+            }
+        } catch (error) {
+            alert('Error de conexión: ' + error.message);
+        }
+    });
+    
+    // Copy token to clipboard
+    function copyToken() {
+        const tokenOutput = document.getElementById('tokenOutput');
+        tokenOutput.select();
+        document.execCommand('copy');
+        
+        // Show feedback
+        const btn = event.target.closest('button');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="bi bi-check me-1"></i>Copiado!';
+        btn.classList.remove('btn-outline-secondary');
+        btn.classList.add('btn-success');
+        
+        setTimeout(() => {
+            btn.innerHTML = originalText;
+            btn.classList.remove('btn-success');
+            btn.classList.add('btn-outline-secondary');
+        }, 2000);
+    }
+    
+    // Auto-focus email field
+    document.addEventListener('DOMContentLoaded', function() {
+        document.getElementById('email').focus();
+    });
+    
+    // Handle form submission with HTMX-like behavior
+    document.getElementById('loginForm').addEventListener('submit', function(e) {
+        const submitBtn = this.querySelector('button[type="submit"]');
+        submitBtn.disabled = true;
+        
+        // Re-enable after 3 seconds (in case of error)
+        setTimeout(() => {
+            submitBtn.disabled = false;
+        }, 3000);
+    });
+</script>
+{% endblock %}

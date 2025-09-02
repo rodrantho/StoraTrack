@@ -1,0 +1,699 @@
+{% extends "base.html" %}
+
+{% block title %}Gestión de Ubicaciones{% endblock %}
+
+{% block page_header %}
+<div class="d-flex justify-content-between align-items-center">
+    <h1><i class="bi bi-geo-alt"></i> Gestión de Ubicaciones</h1>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createLocationModal">
+        <i class="bi bi-plus-lg"></i> Nueva Ubicación
+    </button>
+</div>
+{% endblock %}
+
+{% block content %}
+<!-- Filtros -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="GET" class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label">Buscar</label>
+                <input type="text" class="form-control" name="search" value="{{ request.args.get('search', '') }}" placeholder="Nombre, descripción...">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Empresa</label>
+                <select class="form-select" name="company">
+                    <option value="">Todas</option>
+                    {% for company in companies %}
+                    <option value="{{ company.id }}" {{ 'selected' if request.args.get('company') == company.id|string }}>{{ company.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Ubicación padre</label>
+                <select class="form-select" name="parent">
+                    <option value="">Todas</option>
+                    <option value="root" {{ 'selected' if request.args.get('parent') == 'root' }}>Solo principales</option>
+                    {% for location in parent_locations %}
+                    <option value="{{ location.id }}" {{ 'selected' if request.args.get('parent') == location.id|string }}>{{ location.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">&nbsp;</label>
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-outline-primary">
+                        <i class="bi bi-search"></i> Buscar
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Resumen -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-center border-primary">
+            <div class="card-body">
+                <h4 class="text-primary">{{ summary.total }}</h4>
+                <small class="text-muted">Total Ubicaciones</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center border-success">
+            <div class="card-body">
+                <h4 class="text-success">{{ summary.with_devices }}</h4>
+                <small class="text-muted">Con Equipos</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center border-warning">
+            <div class="card-body">
+                <h4 class="text-warning">{{ summary.main_locations }}</h4>
+                <small class="text-muted">Principales</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center border-info">
+            <div class="card-body">
+                <h4 class="text-info">{{ summary.sub_locations }}</h4>
+                <small class="text-muted">Sub-ubicaciones</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Vista jerárquica de ubicaciones -->
+<div class="card">
+    <div class="card-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="bi bi-diagram-3"></i> Estructura Jerárquica</h5>
+            <div class="btn-group btn-group-sm">
+                <button class="btn btn-outline-secondary" onclick="expandAll()">
+                    <i class="bi bi-arrows-expand"></i> Expandir Todo
+                </button>
+                <button class="btn btn-outline-secondary" onclick="collapseAll()">
+                    <i class="bi bi-arrows-collapse"></i> Colapsar Todo
+                </button>
+            </div>
+        </div>
+    </div>
+    <div class="card-body p-0">
+        {% if locations %}
+        <div class="location-tree">
+            {% for location in locations %}
+            {% if not location.parent_id %}
+            {{ render_location_tree(location, locations, 0) }}
+            {% endif %}
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="bi bi-geo-alt text-muted" style="font-size: 3rem;"></i>
+            <h5 class="text-muted mt-3">No hay ubicaciones registradas</h5>
+            <p class="text-muted">Comienza creando la primera ubicación del sistema.</p>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createLocationModal">
+                <i class="bi bi-plus-lg"></i> Crear Primera Ubicación
+            </button>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Modal Crear Ubicación -->
+<div class="modal fade" id="createLocationModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-plus-lg"></i> Nueva Ubicación</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="createLocationForm">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Nombre *</label>
+                        <input type="text" class="form-control" name="name" required placeholder="Ej: Depósito Principal, Estantería A, Estante 1...">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Empresa *</label>
+                        <select class="form-select" name="company_id" required>
+                            <option value="">Seleccionar empresa...</option>
+                            {% for company in companies %}
+                            <option value="{{ company.id }}">{{ company.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Ubicación padre</label>
+                        <select class="form-select" name="parent_id" id="parentLocationSelect">
+                            <option value="">Ubicación principal (sin padre)</option>
+                            <!-- Se llenará dinámicamente según la empresa seleccionada -->
+                        </select>
+                        <small class="text-muted">Selecciona una ubicación padre para crear una jerarquía</small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Descripción</label>
+                        <textarea class="form-control" name="description" rows="3" placeholder="Descripción detallada de la ubicación..."></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Código/Referencia</label>
+                        <input type="text" class="form-control" name="code" placeholder="Código interno para identificar la ubicación">
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Capacidad máxima</label>
+                                <input type="number" class="form-control" name="max_capacity" min="1" placeholder="Número máximo de equipos">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Orden</label>
+                                <input type="number" class="form-control" name="sort_order" value="0" min="0">
+                                <small class="text-muted">Para ordenar las ubicaciones</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="is_active" id="isActive" checked>
+                        <label class="form-check-label" for="isActive">
+                            Ubicación activa
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check-lg"></i> Crear Ubicación
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Editar Ubicación -->
+<div class="modal fade" id="editLocationModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-pencil"></i> Editar Ubicación</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="editLocationForm">
+                <div class="modal-body" id="editLocationBody">
+                    <!-- Contenido dinámico -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-warning">
+                        <i class="bi bi-check-lg"></i> Actualizar Ubicación
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Ver Detalles -->
+<div class="modal fade" id="viewLocationModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-eye"></i> Detalles de Ubicación</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="viewLocationBody">
+                <!-- Contenido dinámico -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.location-tree {
+    padding: 15px;
+}
+
+.location-item {
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    background: white;
+}
+
+.location-header {
+    padding: 12px 15px;
+    background: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.location-header:hover {
+    background: #e9ecef;
+}
+
+.location-info {
+    display: flex;
+    align-items: center;
+    flex-grow: 1;
+}
+
+.location-icon {
+    margin-right: 10px;
+    font-size: 1.2em;
+}
+
+.location-details {
+    flex-grow: 1;
+}
+
+.location-name {
+    font-weight: 600;
+    margin-bottom: 2px;
+}
+
+.location-meta {
+    font-size: 0.85em;
+    color: #6c757d;
+}
+
+.location-stats {
+    display: flex;
+    gap: 15px;
+    margin-right: 15px;
+}
+
+.location-stat {
+    text-align: center;
+    font-size: 0.85em;
+}
+
+.location-stat-value {
+    font-weight: 600;
+    display: block;
+}
+
+.location-actions {
+    display: flex;
+    gap: 5px;
+}
+
+.location-children {
+    padding: 15px;
+    padding-left: 30px;
+    background: #fafbfc;
+    display: none;
+}
+
+.location-children.show {
+    display: block;
+}
+
+.location-level-1 { margin-left: 20px; }
+.location-level-2 { margin-left: 40px; }
+.location-level-3 { margin-left: 60px; }
+.location-level-4 { margin-left: 80px; }
+
+.expand-icon {
+    transition: transform 0.2s;
+}
+
+.expand-icon.expanded {
+    transform: rotate(90deg);
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentLocationId = null;
+
+// Manejar cambio de empresa en el formulario de creación
+document.querySelector('select[name="company_id"]').addEventListener('change', function() {
+    const companyId = this.value;
+    const parentSelect = document.getElementById('parentLocationSelect');
+    
+    // Limpiar opciones existentes
+    parentSelect.innerHTML = '<option value="">Ubicación principal (sin padre)</option>';
+    
+    if (companyId) {
+        // Cargar ubicaciones de la empresa seleccionada
+        fetch(`/admin/locations/by-company/${companyId}`)
+            .then(response => response.json())
+            .then(locations => {
+                locations.forEach(location => {
+                    const option = document.createElement('option');
+                    option.value = location.id;
+                    option.textContent = location.full_path || location.name;
+                    parentSelect.appendChild(option);
+                });
+            })
+            .catch(error => {
+                console.error('Error loading locations:', error);
+            });
+    }
+});
+
+// Crear ubicación
+document.getElementById('createLocationForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const data = Object.fromEntries(formData.entries());
+    
+    // Convertir checkbox
+    data.is_active = formData.has('is_active');
+    
+    fetch('/admin/locations', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('Ubicación creada exitosamente', 'success');
+            bootstrap.Modal.getInstance(document.getElementById('createLocationModal')).hide();
+            location.reload();
+        } else {
+            showAlert(data.message || 'Error al crear la ubicación', 'danger');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showAlert('Error al crear la ubicación', 'danger');
+    });
+});
+
+// Editar ubicación
+document.getElementById('editLocationForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    if (!currentLocationId) return;
+    
+    const formData = new FormData(this);
+    const data = Object.fromEntries(formData.entries());
+    
+    // Convertir checkbox
+    data.is_active = formData.has('is_active');
+    
+    fetch(`/admin/locations/${currentLocationId}`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('Ubicación actualizada exitosamente', 'success');
+            bootstrap.Modal.getInstance(document.getElementById('editLocationModal')).hide();
+            location.reload();
+        } else {
+            showAlert(data.message || 'Error al actualizar la ubicación', 'danger');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showAlert('Error al actualizar la ubicación', 'danger');
+    });
+});
+
+function toggleLocation(locationId) {
+    const children = document.getElementById(`children-${locationId}`);
+    const icon = document.getElementById(`icon-${locationId}`);
+    
+    if (children.classList.contains('show')) {
+        children.classList.remove('show');
+        icon.classList.remove('expanded');
+    } else {
+        children.classList.add('show');
+        icon.classList.add('expanded');
+    }
+}
+
+function expandAll() {
+    document.querySelectorAll('.location-children').forEach(el => {
+        el.classList.add('show');
+    });
+    document.querySelectorAll('.expand-icon').forEach(el => {
+        el.classList.add('expanded');
+    });
+}
+
+function collapseAll() {
+    document.querySelectorAll('.location-children').forEach(el => {
+        el.classList.remove('show');
+    });
+    document.querySelectorAll('.expand-icon').forEach(el => {
+        el.classList.remove('expanded');
+    });
+}
+
+function viewLocation(locationId) {
+    fetch(`/admin/locations/${locationId}`)
+        .then(response => response.json())
+        .then(location => {
+            const modalBody = document.getElementById('viewLocationBody');
+            modalBody.innerHTML = `
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h6 class="mb-0"><i class="bi bi-info-circle"></i> Información General</h6>
+                            </div>
+                            <div class="card-body">
+                                <p><strong>Nombre:</strong> ${location.name}</p>
+                                <p><strong>Empresa:</strong> ${location.company.name}</p>
+                                <p><strong>Código:</strong> ${location.code || 'N/A'}</p>
+                                <p><strong>Ruta completa:</strong> ${location.full_path || location.name}</p>
+                                <p><strong>Estado:</strong> 
+                                    <span class="badge bg-${location.is_active ? 'success' : 'secondary'}">
+                                        ${location.is_active ? 'Activa' : 'Inactiva'}
+                                    </span>
+                                </p>
+                                <p><strong>Descripción:</strong> ${location.description || 'Sin descripción'}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h6 class="mb-0"><i class="bi bi-bar-chart"></i> Estadísticas</h6>
+                            </div>
+                            <div class="card-body">
+                                <p><strong>Equipos actuales:</strong> ${location.device_count}</p>
+                                <p><strong>Capacidad máxima:</strong> ${location.max_capacity || 'Sin límite'}</p>
+                                <p><strong>Sub-ubicaciones:</strong> ${location.children_count}</p>
+                                <p><strong>Orden:</strong> ${location.sort_order}</p>
+                                <p><strong>Creada:</strong> ${new Date(location.created_at).toLocaleDateString('es-UY')}</p>
+                                <p><strong>Actualizada:</strong> ${new Date(location.updated_at).toLocaleDateString('es-UY')}</p>
+                            </div>
+                        </div>
+                    </div>
+                    ${location.devices && location.devices.length > 0 ? `
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h6 class="mb-0"><i class="bi bi-laptop"></i> Equipos en esta Ubicación</h6>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="table-responsive">
+                                    <table class="table table-sm mb-0">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Equipo</th>
+                                                <th>Estado</th>
+                                                <th>Días</th>
+                                                <th>Costo Actual</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            ${location.devices.map(device => `
+                                                <tr>
+                                                    <td>
+                                                        <strong>${device.name}</strong>
+                                                        <br><small class="text-muted">${device.serial_number || 'S/N: N/A'}</small>
+                                                    </td>
+                                                    <td>
+                                                        <span class="badge bg-${getStatusColor(device.status)}">
+                                                            ${device.status.replace('_', ' ')}
+                                                        </span>
+                                                    </td>
+                                                    <td>${device.days_stored}</td>
+                                                    <td>$${device.current_cost.toFixed(2)}</td>
+                                                </tr>
+                                            `).join('')}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    ` : ''}
+                </div>
+            `;
+            
+            new bootstrap.Modal(document.getElementById('viewLocationModal')).show();
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert('Error al cargar los detalles de la ubicación', 'danger');
+        });
+}
+
+function editLocation(locationId) {
+    currentLocationId = locationId;
+    
+    fetch(`/admin/locations/${locationId}`)
+        .then(response => response.json())
+        .then(location => {
+            const modalBody = document.getElementById('editLocationBody');
+            modalBody.innerHTML = `
+                <div class="mb-3">
+                    <label class="form-label">Nombre *</label>
+                    <input type="text" class="form-control" name="name" value="${location.name}" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Descripción</label>
+                    <textarea class="form-control" name="description" rows="3">${location.description || ''}</textarea>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Código/Referencia</label>
+                    <input type="text" class="form-control" name="code" value="${location.code || ''}">
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">Capacidad máxima</label>
+                            <input type="number" class="form-control" name="max_capacity" value="${location.max_capacity || ''}" min="1">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">Orden</label>
+                            <input type="number" class="form-control" name="sort_order" value="${location.sort_order}" min="0">
+                        </div>
+                    </div>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" name="is_active" id="editIsActive" ${location.is_active ? 'checked' : ''}>
+                    <label class="form-check-label" for="editIsActive">
+                        Ubicación activa
+                    </label>
+                </div>
+            `;
+            
+            new bootstrap.Modal(document.getElementById('editLocationModal')).show();
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert('Error al cargar los datos de la ubicación', 'danger');
+        });
+}
+
+function confirmDeleteLocation(locationId, locationName) {
+    if (confirm(`¿Estás seguro de que deseas eliminar la ubicación "${locationName}"?\n\nEsta acción eliminará también todas las sub-ubicaciones y no se puede deshacer.`)) {
+        deleteLocation(locationId);
+    }
+}
+
+function deleteLocation(locationId) {
+    fetch(`/admin/locations/${locationId}`, {
+        method: 'DELETE'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('Ubicación eliminada exitosamente', 'success');
+            location.reload();
+        } else {
+            showAlert(data.message || 'Error al eliminar la ubicación', 'danger');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showAlert('Error al eliminar la ubicación', 'danger');
+    });
+}
+
+function getStatusColor(status) {
+    const colors = {
+        'INGRESADO': 'primary',
+        'ESPERANDO_A_RECIBIR': 'warning',
+        'ALMACENADO': 'success',
+        'ENVIADO': 'info',
+        'RETIRADO': 'secondary'
+    };
+    return colors[status] || 'secondary';
+}
+</script>
+{% endblock %}
+
+{% macro render_location_tree(location, all_locations, level) %}
+<div class="location-item location-level-{{ level }}">
+    <div class="location-header" onclick="toggleLocation({{ location.id }})">
+        <div class="location-info">
+            {% if location.children %}
+            <i class="bi bi-chevron-right expand-icon" id="icon-{{ location.id }}"></i>
+            {% else %}
+            <i class="location-icon bi bi-geo-alt text-primary"></i>
+            {% endif %}
+            <div class="location-details">
+                <div class="location-name">{{ location.name }}</div>
+                <div class="location-meta">
+                    {{ location.company.name }}
+                    {% if location.code %} | {{ location.code }}{% endif %}
+                    {% if location.description %} | {{ location.description[:50] }}{% if location.description|length > 50 %}...{% endif %}{% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="location-stats">
+            <div class="location-stat">
+                <span class="location-stat-value text-primary">{{ location.device_count }}</span>
+                <small class="text-muted">Equipos</small>
+            </div>
+            {% if location.children %}
+            <div class="location-stat">
+                <span class="location-stat-value text-info">{{ location.children|length }}</span>
+                <small class="text-muted">Sub-ubicaciones</small>
+            </div>
+            {% endif %}
+        </div>
+        <div class="location-actions" onclick="event.stopPropagation()">
+            <button class="btn btn-outline-info btn-sm" onclick="viewLocation({{ location.id }})" title="Ver detalles">
+                <i class="bi bi-eye"></i>
+            </button>
+            <button class="btn btn-outline-warning btn-sm" onclick="editLocation({{ location.id }})" title="Editar">
+                <i class="bi bi-pencil"></i>
+            </button>
+            <button class="btn btn-outline-danger btn-sm" onclick="confirmDeleteLocation({{ location.id }}, '{{ location.name }}')" title="Eliminar">
+                <i class="bi bi-trash"></i>
+            </button>
+        </div>
+    </div>
+    {% if location.children %}
+    <div class="location-children" id="children-{{ location.id }}">
+        {% for child in location.children %}
+        {{ render_location_tree(child, all_locations, level + 1) }}
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+{% endmacro %}

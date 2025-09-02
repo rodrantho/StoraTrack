@@ -1,0 +1,552 @@
+{% extends "base.html" %}
+
+{% block title %}Gestión de Equipos{% endblock %}
+
+{% block page_header %}
+<div class="d-flex justify-content-between align-items-center">
+    <h1><i class="bi bi-laptop"></i> Gestión de Equipos</h1>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createDeviceModal">
+        <i class="bi bi-plus-lg"></i> Nuevo Equipo
+    </button>
+</div>
+{% endblock %}
+
+{% block content %}
+<!-- Filtros -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="GET" class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label">Buscar</label>
+                <input type="text" class="form-control" name="search" value="{{ request.args.get('search', '') }}" placeholder="Nombre, serie, marca...">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Estado</label>
+                <select class="form-select" name="status">
+                    <option value="">Todos</option>
+                    <option value="INGRESADO" {{ 'selected' if request.args.get('status') == 'INGRESADO' }}>Ingresado</option>
+                    <option value="ESPERANDO_A_RECIBIR" {{ 'selected' if request.args.get('status') == 'ESPERANDO_A_RECIBIR' }}>Esperando a recibir</option>
+                    <option value="ALMACENADO" {{ 'selected' if request.args.get('status') == 'ALMACENADO' }}>Almacenado</option>
+                    <option value="ENVIADO" {{ 'selected' if request.args.get('status') == 'ENVIADO' }}>Enviado</option>
+                    <option value="RETIRADO" {{ 'selected' if request.args.get('status') == 'RETIRADO' }}>Retirado</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Empresa</label>
+                <select class="form-select" name="company">
+                    <option value="">Todas</option>
+                    {% for company in companies %}
+                    <option value="{{ company.id }}" {{ 'selected' if request.args.get('company') == company.id|string }}>{{ company.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Ubicación</label>
+                <select class="form-select" name="location">
+                    <option value="">Todas</option>
+                    {% for location in locations %}
+                    <option value="{{ location.id }}" {{ 'selected' if request.args.get('location') == location.id|string }}>{{ location.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Ordenar por</label>
+                <select class="form-select" name="sort">
+                    <option value="created_at" {{ 'selected' if request.args.get('sort') == 'created_at' }}>Fecha creación</option>
+                    <option value="name" {{ 'selected' if request.args.get('sort') == 'name' }}>Nombre</option>
+                    <option value="status" {{ 'selected' if request.args.get('sort') == 'status' }}>Estado</option>
+                    <option value="company" {{ 'selected' if request.args.get('sort') == 'company' }}>Empresa</option>
+                </select>
+            </div>
+            <div class="col-md-1">
+                <label class="form-label">&nbsp;</label>
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-outline-primary">
+                        <i class="bi bi-search"></i>
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Resumen -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-center border-primary">
+            <div class="card-body">
+                <h4 class="text-primary">{{ summary.total }}</h4>
+                <small class="text-muted">Total Equipos</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center border-success">
+            <div class="card-body">
+                <h4 class="text-success">{{ summary.stored }}</h4>
+                <small class="text-muted">Almacenados</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center border-warning">
+            <div class="card-body">
+                <h4 class="text-warning">{{ summary.in_process }}</h4>
+                <small class="text-muted">En Proceso</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center border-info">
+            <div class="card-body">
+                <h4 class="text-info">${{ "%.2f"|format(summary.total_value) }}</h4>
+                <small class="text-muted">Valor Total</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tabla de equipos -->
+<div class="card">
+    <div class="card-body p-0">
+        {% if devices %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Equipo</th>
+                        <th>Empresa</th>
+                        <th>Estado</th>
+                        <th>Ubicación</th>
+                        <th>Días</th>
+                        <th>Costo Actual</th>
+                        <th>Fecha Ingreso</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for device in devices %}
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="me-3">
+                                    {% if device.status.value == 'ALMACENADO' %}
+                                    <i class="bi bi-archive text-success fs-5"></i>
+                                    {% elif device.status.value == 'ENVIADO' %}
+                                    <i class="bi bi-truck text-info fs-5"></i>
+                                    {% elif device.status.value == 'RETIRADO' %}
+                                    <i class="bi bi-box-arrow-up text-secondary fs-5"></i>
+                                    {% else %}
+                                    <i class="bi bi-laptop text-primary fs-5"></i>
+                                    {% endif %}
+                                </div>
+                                <div>
+                                    <strong>{{ device.name }}</strong>
+                                    <br><small class="text-muted">
+                                        {% if device.serial_number %}
+                                        S/N: {{ device.serial_number }}
+                                        {% endif %}
+                                        {% if device.brand %}
+                                        | {{ device.brand }}
+                                        {% endif %}
+                                        {% if device.model %}
+                                        {{ device.model }}
+                                        {% endif %}
+                                    </small>
+                                    {% if device.tags %}
+                                    <br>
+                                    {% for tag in device.tags[:3] %}
+                                    <span class="badge me-1" style="background-color: {{ tag.color }}; color: white; font-size: 0.7em;">
+                                        {{ tag.name }}
+                                    </span>
+                                    {% endfor %}
+                                    {% if device.tags|length > 3 %}
+                                    <span class="badge bg-secondary" style="font-size: 0.7em;">+{{ device.tags|length - 3 }}</span>
+                                    {% endif %}
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <strong>{{ device.company.name }}</strong>
+                            <br><small class="text-muted">{{ device.company.rut_id }}</small>
+                        </td>
+                        <td>
+                            {% set status_colors = {
+                                'INGRESADO': 'primary',
+                                'ESPERANDO_A_RECIBIR': 'warning',
+                                'ALMACENADO': 'success',
+                                'ENVIADO': 'info',
+                                'RETIRADO': 'secondary'
+                            } %}
+                            <span class="badge bg-{{ status_colors.get(device.status.value, 'secondary') }}">
+                                {{ device.status.value.replace('_', ' ').title() }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if device.location %}
+                            <i class="bi bi-geo-alt text-primary"></i> {{ device.location.name }}
+                            {% if device.location.description %}
+                            <br><small class="text-muted">{{ device.location.description }}</small>
+                            {% endif %}
+                            {% else %}
+                            <span class="text-muted">Sin ubicación</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% set days = (now() - device.fecha_ingreso).days + 1 %}
+                            <strong>{{ days }}</strong>
+                            <br><small class="text-muted">días</small>
+                        </td>
+                        <td>
+                            {% set current_cost = calculate_device_cost(device) %}
+                            <strong class="text-success">${{ "%.2f"|format(current_cost) }}</strong>
+                            <br><small class="text-muted">{{ device.company.currency }}</small>
+                        </td>
+                        <td>
+                            {{ device.fecha_ingreso.strftime('%d/%m/%Y') }}
+                            <br><small class="text-muted">{{ device.fecha_ingreso.strftime('%H:%M') }}</small>
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <button class="btn btn-outline-info" onclick="viewDevice({{ device.id }})" title="Ver detalle">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                                <button class="btn btn-outline-warning" onclick="editDevice({{ device.id }})" title="Editar">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                <button class="btn btn-outline-success" onclick="moveDevice({{ device.id }})" title="Mover">
+                                    <i class="bi bi-arrow-right-circle"></i>
+                                </button>
+                                <button class="btn btn-outline-danger" onclick="confirmDelete({{ device.id }}, '{{ device.name }}')" title="Eliminar">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Paginación -->
+        {% if pagination.pages > 1 %}
+        <div class="card-footer">
+            <nav>
+                <ul class="pagination justify-content-center mb-0">
+                    {% if pagination.has_prev %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('admin_devices', page=pagination.prev_num, **request.args) }}">
+                            <i class="bi bi-chevron-left"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                    
+                    {% for page_num in pagination.iter_pages() %}
+                    {% if page_num %}
+                    {% if page_num != pagination.page %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('admin_devices', page=page_num, **request.args) }}">{{ page_num }}</a>
+                    </li>
+                    {% else %}
+                    <li class="page-item active">
+                        <span class="page-link">{{ page_num }}</span>
+                    </li>
+                    {% endif %}
+                    {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">…</span>
+                    </li>
+                    {% endif %}
+                    {% endfor %}
+                    
+                    {% if pagination.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('admin_devices', page=pagination.next_num, **request.args) }}">
+                            <i class="bi bi-chevron-right"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+        {% endif %}
+        {% else %}
+        <div class="text-center py-5">
+            <i class="bi bi-laptop text-muted" style="font-size: 3rem;"></i>
+            <h5 class="text-muted mt-3">No hay equipos registrados</h5>
+            <p class="text-muted">Comienza agregando el primer equipo al sistema.</p>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createDeviceModal">
+                <i class="bi bi-plus-lg"></i> Agregar Primer Equipo
+            </button>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Modal Crear Equipo -->
+<div class="modal fade" id="createDeviceModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-plus-lg"></i> Nuevo Equipo</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="createDeviceForm">
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Nombre del equipo *</label>
+                            <input type="text" class="form-control" name="name" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Empresa *</label>
+                            <select class="form-select" name="company_id" required>
+                                <option value="">Seleccionar empresa...</option>
+                                {% for company in companies %}
+                                <option value="{{ company.id }}">{{ company.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Número de serie</label>
+                            <input type="text" class="form-control" name="serial_number">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Estado inicial</label>
+                            <select class="form-select" name="status">
+                                <option value="INGRESADO">Ingresado</option>
+                                <option value="ESPERANDO_A_RECIBIR">Esperando a recibir</option>
+                                <option value="ALMACENADO" selected>Almacenado</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Marca</label>
+                            <input type="text" class="form-control" name="brand">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Modelo</label>
+                            <input type="text" class="form-control" name="model">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Condición</label>
+                            <select class="form-select" name="condition">
+                                <option value="">No especificada</option>
+                                <option value="EXCELENTE">Excelente</option>
+                                <option value="BUENO">Bueno</option>
+                                <option value="REGULAR">Regular</option>
+                                <option value="MALO">Malo</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Ubicación</label>
+                            <select class="form-select" name="location_id">
+                                <option value="">Sin ubicación</option>
+                                {% for location in locations %}
+                                <option value="{{ location.id }}">{{ location.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Descripción</label>
+                            <textarea class="form-control" name="description" rows="3"></textarea>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Costo base (opcional)</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" class="form-control" name="costo_base" step="0.01" min="0">
+                            </div>
+                            <small class="text-muted">Dejar vacío para usar el valor por defecto de la empresa</small>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Costo diario (opcional)</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" class="form-control" name="costo_diario" step="0.01" min="0">
+                            </div>
+                            <small class="text-muted">Dejar vacío para usar el valor por defecto de la empresa</small>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Etiquetas</label>
+                            <div id="tagsContainer">
+                                {% for tag in tags %}
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="checkbox" name="tags" value="{{ tag.id }}" id="tag{{ tag.id }}">
+                                    <label class="form-check-label" for="tag{{ tag.id }}">
+                                        <span class="badge" style="background-color: {{ tag.color }}; color: white;">
+                                            {{ tag.name }}
+                                        </span>
+                                    </label>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check-lg"></i> Crear Equipo
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Mover Equipo -->
+<div class="modal fade" id="moveDeviceModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-arrow-right-circle"></i> Mover Equipo</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="moveDeviceForm">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Nuevo estado *</label>
+                        <select class="form-select" name="to_status" required>
+                            <option value="INGRESADO">Ingresado</option>
+                            <option value="ESPERANDO_A_RECIBIR">Esperando a recibir</option>
+                            <option value="ALMACENADO">Almacenado</option>
+                            <option value="ENVIADO">Enviado</option>
+                            <option value="RETIRADO">Retirado</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Nueva ubicación</label>
+                        <select class="form-select" name="to_location_id">
+                            <option value="">Sin ubicación</option>
+                            {% for location in locations %}
+                            <option value="{{ location.id }}">{{ location.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Notas del movimiento</label>
+                        <textarea class="form-control" name="notes" rows="3" placeholder="Descripción del movimiento..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-check-lg"></i> Mover Equipo
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentDeviceId = null;
+
+// Crear equipo
+document.getElementById('createDeviceForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const data = Object.fromEntries(formData.entries());
+    
+    // Manejar tags múltiples
+    const tags = formData.getAll('tags');
+    data.tags = tags;
+    
+    fetch('/admin/devices', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('Equipo creado exitosamente', 'success');
+            bootstrap.Modal.getInstance(document.getElementById('createDeviceModal')).hide();
+            location.reload();
+        } else {
+            showAlert(data.message || 'Error al crear el equipo', 'danger');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showAlert('Error al crear el equipo', 'danger');
+    });
+});
+
+// Mover equipo
+document.getElementById('moveDeviceForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    if (!currentDeviceId) return;
+    
+    const formData = new FormData(this);
+    const data = Object.fromEntries(formData.entries());
+    
+    fetch(`/admin/devices/${currentDeviceId}/move`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('Equipo movido exitosamente', 'success');
+            bootstrap.Modal.getInstance(document.getElementById('moveDeviceModal')).hide();
+            location.reload();
+        } else {
+            showAlert(data.message || 'Error al mover el equipo', 'danger');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showAlert('Error al mover el equipo', 'danger');
+    });
+});
+
+function viewDevice(deviceId) {
+    window.location.href = `/admin/devices/${deviceId}`;
+}
+
+function editDevice(deviceId) {
+    window.location.href = `/admin/devices/${deviceId}/edit`;
+}
+
+function moveDevice(deviceId) {
+    currentDeviceId = deviceId;
+    new bootstrap.Modal(document.getElementById('moveDeviceModal')).show();
+}
+
+function confirmDelete(deviceId, deviceName) {
+    if (confirm(`¿Estás seguro de que deseas eliminar el equipo "${deviceName}"?\n\nEsta acción no se puede deshacer.`)) {
+        deleteDevice(deviceId);
+    }
+}
+
+function deleteDevice(deviceId) {
+    fetch(`/admin/devices/${deviceId}`, {
+        method: 'DELETE'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('Equipo eliminado exitosamente', 'success');
+            location.reload();
+        } else {
+            showAlert(data.message || 'Error al eliminar el equipo', 'danger');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showAlert('Error al eliminar el equipo', 'danger');
+    });
+}
+</script>
+{% endblock %}

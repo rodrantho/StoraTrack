@@ -1,0 +1,248 @@
+{% extends "base.html" %}
+
+{% block title %}Gestión de Empresas{% endblock %}
+
+{% block page_header %}
+<div class="d-flex justify-content-between align-items-center">
+    <h1><i class="bi bi-building"></i> Gestión de Empresas</h1>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createCompanyModal">
+        <i class="bi bi-plus-circle"></i> Nueva Empresa
+    </button>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <!-- Filtros -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <form method="get" class="row g-3">
+                    <div class="col-md-4">
+                        <label for="search" class="form-label">Buscar</label>
+                        <input type="text" class="form-control" id="search" name="search" 
+                               value="{{ request.query_params.get('search', '') }}" 
+                               placeholder="Nombre, RUT o email...">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="status" class="form-label">Estado</label>
+                        <select class="form-select" id="status" name="status">
+                            <option value="">Todos</option>
+                            <option value="active" {% if request.query_params.get('status') == 'active' %}selected{% endif %}>Activas</option>
+                            <option value="inactive" {% if request.query_params.get('status') == 'inactive' %}selected{% endif %}>Inactivas</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="sort" class="form-label">Ordenar por</label>
+                        <select class="form-select" id="sort" name="sort">
+                            <option value="name" {% if request.query_params.get('sort') == 'name' %}selected{% endif %}>Nombre</option>
+                            <option value="created_at" {% if request.query_params.get('sort') == 'created_at' %}selected{% endif %}>Fecha creación</option>
+                            <option value="rut_id" {% if request.query_params.get('sort') == 'rut_id' %}selected{% endif %}>RUT</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button type="submit" class="btn btn-outline-primary me-2">
+                            <i class="bi bi-search"></i> Filtrar
+                        </button>
+                        <a href="{{ url_for('admin_companies') }}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-clockwise"></i>
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Tabla de empresas -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Empresas ({{ companies|length }})</h5>
+            </div>
+            <div class="card-body p-0">
+                {% if companies %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Empresa</th>
+                                <th>RUT/ID</th>
+                                <th>Contacto</th>
+                                <th>Equipos</th>
+                                <th>Estado</th>
+                                <th>Creada</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for company in companies %}
+                            <tr>
+                                <td>
+                                    <div>
+                                        <strong>{{ company.name }}</strong>
+                                        {% if company.email %}
+                                        <br><small class="text-muted">{{ company.email }}</small>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td><code>{{ company.rut_id }}</code></td>
+                                <td>
+                                    {% if company.contact_name %}
+                                    <div>{{ company.contact_name }}</div>
+                                    {% endif %}
+                                    {% if company.phone %}
+                                    <small class="text-muted">{{ company.phone }}</small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge bg-info">{{ company.devices|length }} equipos</span>
+                                </td>
+                                <td>
+                                    {% if company.is_active %}
+                                    <span class="badge bg-success">Activa</span>
+                                    {% else %}
+                                    <span class="badge bg-danger">Inactiva</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <small class="text-muted">{{ company.created_at.strftime('%d/%m/%Y') }}</small>
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <a href="{{ url_for('admin_company_detail', company_id=company.id) }}" 
+                                           class="btn btn-outline-primary" title="Ver detalles">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        <a href="{{ url_for('admin_company_edit', company_id=company.id) }}" 
+                                           class="btn btn-outline-warning" title="Editar">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        {% if current_user.role.value == 'SUPERADMIN' %}
+                                        <button class="btn btn-outline-danger" 
+                                                onclick="confirmDelete('{{ company.name }}', '{{ url_for('admin_company_delete', company_id=company.id) }}')"
+                                                title="Eliminar">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="bi bi-building text-muted" style="font-size: 3rem;"></i>
+                    <h5 class="text-muted mt-3">No hay empresas registradas</h5>
+                    <p class="text-muted">Comienza creando tu primera empresa</p>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createCompanyModal">
+                        <i class="bi bi-plus-circle"></i> Nueva Empresa
+                    </button>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Crear Empresa -->
+<div class="modal fade" id="createCompanyModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-building"></i> Nueva Empresa</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{{ url_for('admin_company_create') }}">
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="name" class="form-label">Nombre de la empresa *</label>
+                            <input type="text" class="form-control" id="name" name="name" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="rut_id" class="form-label">RUT/ID *</label>
+                            <input type="text" class="form-control" id="rut_id" name="rut_id" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="contact_name" class="form-label">Nombre del contacto</label>
+                            <input type="text" class="form-control" id="contact_name" name="contact_name">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="email" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="email" name="email">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="phone" class="form-label">Teléfono</label>
+                            <input type="text" class="form-control" id="phone" name="phone">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="currency" class="form-label">Moneda</label>
+                            <select class="form-select" id="currency" name="currency">
+                                <option value="UYU" selected>Peso Uruguayo (UYU)</option>
+                                <option value="USD">Dólar Americano (USD)</option>
+                                <option value="EUR">Euro (EUR)</option>
+                                <option value="ARS">Peso Argentino (ARS)</option>
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label for="address" class="form-label">Dirección</label>
+                            <textarea class="form-control" id="address" name="address" rows="2"></textarea>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="costo_base_default" class="form-label">Costo base por defecto</label>
+                            <input type="number" class="form-control" id="costo_base_default" name="costo_base_default" 
+                                   step="0.01" min="0" value="500.00">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="costo_diario_default" class="form-label">Costo diario por defecto</label>
+                            <input type="number" class="form-control" id="costo_diario_default" name="costo_diario_default" 
+                                   step="0.01" min="0" value="25.00">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="iva_percent" class="form-label">IVA (%)</label>
+                            <input type="number" class="form-control" id="iva_percent" name="iva_percent" 
+                                   step="0.01" min="0" max="100" value="22.00">
+                        </div>
+                        <div class="col-12">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="incluir_iva" name="incluir_iva" checked>
+                                <label class="form-check-label" for="incluir_iva">
+                                    Incluir IVA en los cálculos
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check-circle"></i> Crear Empresa
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function confirmDelete(companyName, deleteUrl) {
+    if (confirm(`¿Estás seguro de que deseas eliminar la empresa "${companyName}"?\n\nEsta acción no se puede deshacer y eliminará todos los datos asociados.`)) {
+        // Crear formulario para enviar DELETE
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = deleteUrl;
+        
+        const methodInput = document.createElement('input');
+        methodInput.type = 'hidden';
+        methodInput.name = '_method';
+        methodInput.value = 'DELETE';
+        form.appendChild(methodInput);
+        
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+</script>
+{% endblock %}

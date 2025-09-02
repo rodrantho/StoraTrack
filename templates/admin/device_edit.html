@@ -1,0 +1,663 @@
+{% extends "base.html" %}
+
+{% block title %}Editar Equipo - {{ device.name }}{% endblock %}
+
+{% block page_header %}
+<div class="d-flex justify-content-between align-items-center">
+    <div>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/admin/dashboard">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="/admin/devices">Equipos</a></li>
+                <li class="breadcrumb-item"><a href="/admin/devices/{{ device.id }}">{{ device.name }}</a></li>
+                <li class="breadcrumb-item active">Editar</li>
+            </ol>
+        </nav>
+        <h1><i class="bi bi-pencil"></i> Editar Equipo</h1>
+        <p class="text-muted mb-0">{{ device.name }} | {{ device.company.name }}</p>
+    </div>
+    <div class="btn-group">
+        <a href="/admin/devices/{{ device.id }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Volver
+        </a>
+        <a href="/admin/devices" class="btn btn-outline-primary">
+            <i class="bi bi-list"></i> Lista de Equipos
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-pencil-square"></i> Información del Equipo</h5>
+            </div>
+            <div class="card-body">
+                <form id="editDeviceForm">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Nombre del Equipo *</label>
+                            <input type="text" class="form-control" name="name" value="{{ device.name }}" required placeholder="Ej: Laptop Dell Inspiron">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Empresa *</label>
+                            <select class="form-select" name="company_id" required>
+                                {% for company in companies %}
+                                <option value="{{ company.id }}" {{ 'selected' if company.id == device.company_id }}>{{ company.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Número de Serie</label>
+                            <input type="text" class="form-control" name="serial_number" value="{{ device.serial_number or '' }}" placeholder="Número de serie del equipo">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Estado *</label>
+                            <select class="form-select" name="status" required>
+                                <option value="INGRESADO" {{ 'selected' if device.status == 'INGRESADO' }}>Ingresado</option>
+                                <option value="ESPERANDO_A_RECIBIR" {{ 'selected' if device.status == 'ESPERANDO_A_RECIBIR' }}>Esperando a Recibir</option>
+                                <option value="ALMACENADO" {{ 'selected' if device.status == 'ALMACENADO' }}>Almacenado</option>
+                                <option value="ENVIADO" {{ 'selected' if device.status == 'ENVIADO' }}>Enviado</option>
+                                <option value="RETIRADO" {{ 'selected' if device.status == 'RETIRADO' }}>Retirado</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Marca</label>
+                            <input type="text" class="form-control" name="brand" value="{{ device.brand or '' }}" placeholder="Ej: Dell, HP, Lenovo...">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Modelo</label>
+                            <input type="text" class="form-control" name="model" value="{{ device.model or '' }}" placeholder="Ej: Inspiron 15, ThinkPad X1...">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Condición</label>
+                            <select class="form-select" name="condition">
+                                <option value="" {{ 'selected' if not device.condition }}>No especificada</option>
+                                <option value="nuevo" {{ 'selected' if device.condition == 'nuevo' }}>Nuevo</option>
+                                <option value="usado" {{ 'selected' if device.condition == 'usado' }}>Usado</option>
+                                <option value="dañado" {{ 'selected' if device.condition == 'dañado' }}>Dañado</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Ubicación</label>
+                            <select class="form-select" name="location_id" id="locationSelect">
+                                <option value="">Sin ubicación</option>
+                                {% for location in locations %}
+                                <option value="{{ location.id }}" {{ 'selected' if location.id == device.location_id }}>{{ location.full_path or location.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Descripción</label>
+                            <textarea class="form-control" name="description" rows="3" placeholder="Descripción detallada del equipo...">{{ device.description or '' }}</textarea>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Costo Base *</label>
+                            <div class="input-group">
+                                <span class="input-group-text">{{ device.company.currency }}</span>
+                                <input type="number" class="form-control" name="base_cost" value="{{ device.base_cost }}" step="0.01" min="0" required>
+                            </div>
+                            <small class="text-muted">Costo inicial por ingresar el equipo</small>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Costo Diario *</label>
+                            <div class="input-group">
+                                <span class="input-group-text">{{ device.company.currency }}</span>
+                                <input type="number" class="form-control" name="daily_cost" value="{{ device.daily_cost }}" step="0.01" min="0" required>
+                            </div>
+                            <small class="text-muted">Costo por día de almacenamiento</small>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Tags</label>
+                            <div class="row g-2" id="tagsContainer">
+                                {% for tag in available_tags %}
+                                <div class="col-auto">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="tags" value="{{ tag.id }}" id="tag{{ tag.id }}" {{ 'checked' if tag in device.tags }}>
+                                        <label class="form-check-label" for="tag{{ tag.id }}">
+                                            <span class="badge bg-{{ tag.color }}">
+                                                <i class="bi bi-tag"></i> {{ tag.name }}
+                                            </span>
+                                        </label>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            <small class="text-muted">Selecciona los tags que aplican a este equipo</small>
+                        </div>
+                    </div>
+                    
+                    <hr class="my-4">
+                    
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <button type="button" class="btn btn-outline-secondary" onclick="window.history.back()">
+                                <i class="bi bi-arrow-left"></i> Cancelar
+                            </button>
+                        </div>
+                        <div>
+                            <button type="submit" class="btn btn-warning">
+                                <i class="bi bi-check-lg"></i> Actualizar Equipo
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <!-- Información Actual -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-info-circle"></i> Información Actual</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Estado Actual</label>
+                    <p class="form-control-plaintext">
+                        <span class="badge bg-{{ get_status_color(device.status) }}">
+                            {{ device.status.replace('_', ' ').title() }}
+                        </span>
+                    </p>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Días Almacenado</label>
+                    <p class="form-control-plaintext">
+                        <span class="badge bg-info">{{ device.days_stored }} días</span>
+                    </p>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Costo Actual</label>
+                    <p class="form-control-plaintext">
+                        <span class="badge bg-success fs-6">{{ device.company.currency }} {{ "%.2f"|format(device.current_cost) }}</span>
+                    </p>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Fecha de Ingreso</label>
+                    <p class="form-control-plaintext">{{ device.entry_date.strftime('%d/%m/%Y') }}</p>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Última Actualización</label>
+                    <p class="form-control-plaintext">{{ device.updated_at.strftime('%d/%m/%Y %H:%M') }}</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Historial Reciente -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-clock-history"></i> Movimientos Recientes</h5>
+            </div>
+            <div class="card-body">
+                {% if device.movements[:3] %}
+                <div class="timeline-simple">
+                    {% for movement in device.movements[:3] %}
+                    <div class="timeline-item-simple">
+                        <div class="timeline-marker-simple bg-{{ get_status_color(movement.new_status) }}"></div>
+                        <div class="timeline-content-simple">
+                            <div class="fw-bold">{{ movement.new_status.replace('_', ' ').title() }}</div>
+                            <small class="text-muted">{{ movement.created_at.strftime('%d/%m/%Y %H:%M') }}</small>
+                            {% if movement.notes %}
+                            <div class="small text-muted mt-1">{{ movement.notes[:50] }}{% if movement.notes|length > 50 %}...{% endif %}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                <div class="text-center mt-3">
+                    <a href="/admin/devices/{{ device.id }}" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-eye"></i> Ver Historial Completo
+                    </a>
+                </div>
+                {% else %}
+                <div class="text-center text-muted">
+                    <i class="bi bi-clock-history" style="font-size: 2rem;"></i>
+                    <p class="mt-2">No hay movimientos registrados</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Acciones Rápidas -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-lightning"></i> Acciones Rápidas</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <button class="btn btn-outline-primary" onclick="generateQR({{ device.id }})">
+                        <i class="bi bi-qr-code"></i> Generar QR
+                    </button>
+                    <button class="btn btn-outline-info" onclick="printLabel({{ device.id }})">
+                        <i class="bi bi-printer"></i> Imprimir Etiqueta
+                    </button>
+                    <button class="btn btn-outline-success" onclick="calculateCost()">
+                        <i class="bi bi-calculator"></i> Calcular Costo
+                    </button>
+                    <button class="btn btn-outline-warning" data-bs-toggle="modal" data-bs-target="#moveDeviceModal">
+                        <i class="bi bi-arrow-right-circle"></i> Mover Equipo
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Mover Equipo -->
+<div class="modal fade" id="moveDeviceModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-arrow-right-circle"></i> Mover Equipo</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="moveDeviceForm">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Nuevo Estado</label>
+                        <select class="form-select" name="new_status" required>
+                            <option value="">Seleccionar estado...</option>
+                            <option value="INGRESADO">Ingresado</option>
+                            <option value="ESPERANDO_A_RECIBIR">Esperando a Recibir</option>
+                            <option value="ALMACENADO">Almacenado</option>
+                            <option value="ENVIADO">Enviado</option>
+                            <option value="RETIRADO">Retirado</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Nueva Ubicación</label>
+                        <select class="form-select" name="new_location_id">
+                            <option value="">Sin ubicación</option>
+                            {% for location in locations %}
+                            <option value="{{ location.id }}">{{ location.full_path or location.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Notas</label>
+                        <textarea class="form-control" name="notes" rows="3" placeholder="Notas sobre este movimiento..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-warning">
+                        <i class="bi bi-check-lg"></i> Mover Equipo
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal QR Code -->
+<div class="modal fade" id="qrModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-qr-code"></i> Código QR</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center" id="qrModalBody">
+                <!-- Contenido dinámico -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-primary" onclick="downloadQR()">
+                    <i class="bi bi-download"></i> Descargar QR
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Calcular Costo -->
+<div class="modal fade" id="calculateCostModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-calculator"></i> Cálculo de Costo</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="costCalculationBody">
+                <!-- Contenido dinámico -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-primary" onclick="downloadPDF()">
+                    <i class="bi bi-file-pdf"></i> Descargar PDF
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.timeline-simple {
+    position: relative;
+    padding-left: 30px;
+}
+
+.timeline-simple::before {
+    content: '';
+    position: absolute;
+    left: 10px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: #dee2e6;
+}
+
+.timeline-item-simple {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.timeline-marker-simple {
+    position: absolute;
+    left: -25px;
+    top: 5px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid white;
+    box-shadow: 0 0 0 1px #dee2e6;
+}
+
+.timeline-content-simple {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    padding: 10px;
+}
+
+.badge.fs-6 {
+    font-size: 0.9rem !important;
+}
+
+.form-check-label .badge {
+    cursor: pointer;
+}
+
+.form-check-input:checked + .form-check-label .badge {
+    box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.25);
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+<script>
+let currentQRData = null;
+
+// Actualizar ubicaciones cuando cambie la empresa
+document.querySelector('select[name="company_id"]').addEventListener('change', function() {
+    const companyId = this.value;
+    const locationSelect = document.getElementById('locationSelect');
+    const tagsContainer = document.getElementById('tagsContainer');
+    
+    // Limpiar ubicaciones
+    locationSelect.innerHTML = '<option value="">Sin ubicación</option>';
+    
+    if (companyId) {
+        // Cargar ubicaciones de la empresa
+        fetch(`/admin/locations/by-company/${companyId}`)
+            .then(response => response.json())
+            .then(locations => {
+                locations.forEach(location => {
+                    const option = document.createElement('option');
+                    option.value = location.id;
+                    option.textContent = location.full_path || location.name;
+                    locationSelect.appendChild(option);
+                });
+            })
+            .catch(error => {
+                console.error('Error loading locations:', error);
+            });
+        
+        // Cargar tags de la empresa
+        fetch(`/admin/tags/by-company/${companyId}`)
+            .then(response => response.json())
+            .then(tags => {
+                tagsContainer.innerHTML = '';
+                tags.forEach(tag => {
+                    const colDiv = document.createElement('div');
+                    colDiv.className = 'col-auto';
+                    
+                    colDiv.innerHTML = `
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="tags" value="${tag.id}" id="tag${tag.id}">
+                            <label class="form-check-label" for="tag${tag.id}">
+                                <span class="badge bg-${tag.color}">
+                                    <i class="bi bi-tag"></i> ${tag.name}
+                                </span>
+                            </label>
+                        </div>
+                    `;
+                    
+                    tagsContainer.appendChild(colDiv);
+                });
+            })
+            .catch(error => {
+                console.error('Error loading tags:', error);
+            });
+    }
+});
+
+// Editar equipo
+document.getElementById('editDeviceForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const data = Object.fromEntries(formData.entries());
+    
+    // Obtener tags seleccionados
+    const selectedTags = [];
+    document.querySelectorAll('input[name="tags"]:checked').forEach(checkbox => {
+        selectedTags.push(parseInt(checkbox.value));
+    });
+    data.tags = selectedTags;
+    
+    fetch(`/admin/devices/{{ device.id }}`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('Equipo actualizado exitosamente', 'success');
+            window.location.href = `/admin/devices/${data.device.id}`;
+        } else {
+            showAlert(data.message || 'Error al actualizar el equipo', 'danger');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showAlert('Error al actualizar el equipo', 'danger');
+    });
+});
+
+// Mover equipo
+document.getElementById('moveDeviceForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const data = Object.fromEntries(formData.entries());
+    
+    fetch(`/admin/devices/{{ device.id }}/move`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('Equipo movido exitosamente', 'success');
+            bootstrap.Modal.getInstance(document.getElementById('moveDeviceModal')).hide();
+            location.reload();
+        } else {
+            showAlert(data.message || 'Error al mover el equipo', 'danger');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showAlert('Error al mover el equipo', 'danger');
+    });
+});
+
+function generateQR(deviceId) {
+    const qrData = `${window.location.origin}/device/${deviceId}`;
+    currentQRData = qrData;
+    
+    const modalBody = document.getElementById('qrModalBody');
+    modalBody.innerHTML = `
+        <div class="mb-3">
+            <div id="qrcode-modal" class="d-inline-block"></div>
+        </div>
+        <p class="text-muted">Código QR para: <strong>{{ device.name }}</strong></p>
+        <p class="small text-muted">${qrData}</p>
+    `;
+    
+    QRCode.toCanvas(document.getElementById('qrcode-modal'), qrData, {
+        width: 200,
+        margin: 2,
+        color: {
+            dark: '#000000',
+            light: '#FFFFFF'
+        }
+    });
+    
+    new bootstrap.Modal(document.getElementById('qrModal')).show();
+}
+
+function downloadQR() {
+    if (!currentQRData) return;
+    
+    QRCode.toDataURL(currentQRData, {
+        width: 400,
+        margin: 2,
+        color: {
+            dark: '#000000',
+            light: '#FFFFFF'
+        }
+    }, function(err, url) {
+        if (err) {
+            console.error('Error generating QR:', err);
+            return;
+        }
+        
+        const link = document.createElement('a');
+        link.download = `qr-{{ device.name }}-${Date.now()}.png`;
+        link.href = url;
+        link.click();
+    });
+}
+
+function printLabel(deviceId) {
+    const printWindow = window.open(`/admin/devices/${deviceId}/label`, '_blank');
+    printWindow.onload = function() {
+        printWindow.print();
+    };
+}
+
+function calculateCost() {
+    fetch(`/api/devices/{{ device.id }}/cost`)
+        .then(response => response.json())
+        .then(data => {
+            const modalBody = document.getElementById('costCalculationBody');
+            modalBody.innerHTML = `
+                <div class="row g-3">
+                    <div class="col-12">
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <h3 class="text-primary mb-0">{{ device.company.currency }} ${data.total_cost.toFixed(2)}</h3>
+                                <small class="text-muted">Costo Total Actual</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-body text-center">
+                                <h5 class="text-info">{{ device.company.currency }} ${data.base_cost.toFixed(2)}</h5>
+                                <small class="text-muted">Costo Base</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-body text-center">
+                                <h5 class="text-warning">{{ device.company.currency }} ${data.storage_cost.toFixed(2)}</h5>
+                                <small class="text-muted">Costo Almacenamiento</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <tr>
+                                    <td><strong>Días almacenado:</strong></td>
+                                    <td>${data.days_stored} días</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Costo diario:</strong></td>
+                                    <td>{{ device.company.currency }} ${data.daily_cost.toFixed(2)}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Fecha de ingreso:</strong></td>
+                                    <td>${new Date(data.entry_date).toLocaleDateString('es-UY')}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Fecha de cálculo:</strong></td>
+                                    <td>${new Date().toLocaleDateString('es-UY')}</td>
+                                </tr>
+                                ${data.iva_amount > 0 ? `
+                                <tr>
+                                    <td><strong>Subtotal:</strong></td>
+                                    <td>{{ device.company.currency }} ${data.subtotal.toFixed(2)}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>IVA (${data.iva_percent}%):</strong></td>
+                                    <td>{{ device.company.currency }} ${data.iva_amount.toFixed(2)}</td>
+                                </tr>
+                                ` : ''}
+                                <tr class="table-primary">
+                                    <td><strong>Total:</strong></td>
+                                    <td><strong>{{ device.company.currency }} ${data.total_cost.toFixed(2)}</strong></td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            new bootstrap.Modal(document.getElementById('calculateCostModal')).show();
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert('Error al calcular el costo', 'danger');
+        });
+}
+
+function downloadPDF() {
+    window.open(`/api/devices/{{ device.id }}/cost-report?format=pdf`, '_blank');
+}
+</script>
+{% endblock %}
+
+{% macro get_status_color(status) %}
+{% if status == 'INGRESADO' %}primary
+{% elif status == 'ESPERANDO_A_RECIBIR' %}warning
+{% elif status == 'ALMACENADO' %}success
+{% elif status == 'ENVIADO' %}info
+{% elif status == 'RETIRADO' %}secondary
+{% else %}secondary{% endif %}
+{% endmacro %}

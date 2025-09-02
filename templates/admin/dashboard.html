@@ -1,0 +1,373 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard Administrativo - StoraTrack{% endblock %}
+
+{% block page_title %}Dashboard Administrativo{% endblock %}
+
+{% block header_actions %}
+<div class="btn-group" role="group">
+    <a href="/admin/companies/new" class="btn btn-primary">
+        <i class="bi bi-plus-circle me-1"></i>
+        Nueva Empresa
+    </a>
+    <a href="/admin/users/new" class="btn btn-outline-primary">
+        <i class="bi bi-person-plus me-1"></i>
+        Nuevo Usuario
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-primary shadow h-100 py-2 card-stats">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                            Empresas Activas
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                            {{ stats.total_companies }}
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-building text-primary" style="font-size: 2rem;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-success shadow h-100 py-2" style="border-left: 4px solid #28a745;">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                            Total Equipos
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                            {{ stats.total_devices }}
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-laptop text-success" style="font-size: 2rem;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-info shadow h-100 py-2" style="border-left: 4px solid #17a2b8;">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                            Usuarios Activos
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                            {{ stats.total_users }}
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-people text-info" style="font-size: 2rem;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-warning shadow h-100 py-2" style="border-left: 4px solid #ffc107;">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                            Ingresos Mensuales
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                            ${{ "{:,.2f}".format(stats.monthly_revenue) }}
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-currency-dollar text-warning" style="font-size: 2rem;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts and Recent Activity -->
+<div class="row">
+    <!-- Recent Companies -->
+    <div class="col-lg-6 mb-4">
+        <div class="card shadow">
+            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="bi bi-building me-2"></i>
+                    Empresas Recientes
+                </h6>
+                <a href="/admin/companies" class="btn btn-sm btn-outline-primary">
+                    Ver Todas
+                </a>
+            </div>
+            <div class="card-body">
+                {% if recent_companies %}
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Empresa</th>
+                                    <th>RUT/ID</th>
+                                    <th>Fecha Registro</th>
+                                    <th>Equipos</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for company in recent_companies %}
+                                <tr>
+                                    <td>
+                                        <a href="/admin/companies/{{ company.id }}" class="text-decoration-none">
+                                            {{ company.name }}
+                                        </a>
+                                    </td>
+                                    <td><small class="text-muted">{{ company.rut_id }}</small></td>
+                                    <td><small>{{ company.created_at.strftime('%d/%m/%Y') }}</small></td>
+                                    <td>
+                                        <span class="badge bg-secondary">{{ company.devices|length }}</span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center text-muted py-4">
+                        <i class="bi bi-building" style="font-size: 3rem; opacity: 0.3;"></i>
+                        <p class="mt-2">No hay empresas registradas</p>
+                        <a href="/admin/companies/new" class="btn btn-primary btn-sm">
+                            Crear Primera Empresa
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Users -->
+    <div class="col-lg-6 mb-4">
+        <div class="card shadow">
+            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold text-success">
+                    <i class="bi bi-people me-2"></i>
+                    Usuarios Recientes
+                </h6>
+                <a href="/admin/users" class="btn btn-sm btn-outline-success">
+                    Ver Todos
+                </a>
+            </div>
+            <div class="card-body">
+                {% if recent_users %}
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Usuario</th>
+                                    <th>Rol</th>
+                                    <th>Empresa</th>
+                                    <th>Último Acceso</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for user in recent_users %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="me-2">
+                                                {% if user.is_active %}
+                                                    <i class="bi bi-circle-fill text-success" style="font-size: 0.5rem;"></i>
+                                                {% else %}
+                                                    <i class="bi bi-circle-fill text-danger" style="font-size: 0.5rem;"></i>
+                                                {% endif %}
+                                            </div>
+                                            <div>
+                                                <div class="fw-bold">{{ user.full_name }}</div>
+                                                <small class="text-muted">{{ user.email }}</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{{ 'danger' if user.role.value == 'SUPERADMIN' else 'warning' if user.role.value == 'STAFF' else 'info' }}">
+                                            {{ user.role.value }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if user.company %}
+                                            <small>{{ user.company.name }}</small>
+                                        {% else %}
+                                            <small class="text-muted">-</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if user.last_login %}
+                                            <small>{{ user.last_login.strftime('%d/%m/%Y') }}</small>
+                                        {% else %}
+                                            <small class="text-muted">Nunca</small>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center text-muted py-4">
+                        <i class="bi bi-people" style="font-size: 3rem; opacity: 0.3;"></i>
+                        <p class="mt-2">No hay usuarios registrados</p>
+                        <a href="/admin/users/new" class="btn btn-success btn-sm">
+                            Crear Primer Usuario
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Device Status Overview -->
+<div class="row">
+    <div class="col-12 mb-4">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-info">
+                    <i class="bi bi-laptop me-2"></i>
+                    Estado de Equipos por Empresa
+                </h6>
+            </div>
+            <div class="card-body">
+                {% if device_stats %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Empresa</th>
+                                    <th class="text-center">Ingresados</th>
+                                    <th class="text-center">Esperando</th>
+                                    <th class="text-center">Almacenados</th>
+                                    <th class="text-center">Enviados</th>
+                                    <th class="text-center">Retirados</th>
+                                    <th class="text-center">Total</th>
+                                    <th class="text-end">Costo Mensual</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for stat in device_stats %}
+                                <tr>
+                                    <td>
+                                        <a href="/admin/companies/{{ stat.company.id }}" class="text-decoration-none">
+                                            {{ stat.company.name }}
+                                        </a>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge bg-primary">{{ stat.ingresado }}</span>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge bg-warning">{{ stat.esperando_a_recibir }}</span>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge bg-success">{{ stat.almacenado }}</span>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge bg-info">{{ stat.enviado }}</span>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge bg-secondary">{{ stat.retirado }}</span>
+                                    </td>
+                                    <td class="text-center">
+                                        <strong>{{ stat.total }}</strong>
+                                    </td>
+                                    <td class="text-end">
+                                        <strong>${{ "{:,.2f}".format(stat.monthly_cost) }}</strong>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center text-muted py-4">
+                        <i class="bi bi-laptop" style="font-size: 3rem; opacity: 0.3;"></i>
+                        <p class="mt-2">No hay equipos registrados</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-dark">
+                    <i class="bi bi-lightning me-2"></i>
+                    Acciones Rápidas
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <a href="/admin/companies/new" class="btn btn-outline-primary w-100 h-100 d-flex flex-column align-items-center justify-content-center py-3">
+                            <i class="bi bi-building" style="font-size: 2rem;"></i>
+                            <span class="mt-2">Nueva Empresa</span>
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="/admin/users/new" class="btn btn-outline-success w-100 h-100 d-flex flex-column align-items-center justify-content-center py-3">
+                            <i class="bi bi-person-plus" style="font-size: 2rem;"></i>
+                            <span class="mt-2">Nuevo Usuario</span>
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="/admin/devices/new" class="btn btn-outline-info w-100 h-100 d-flex flex-column align-items-center justify-content-center py-3">
+                            <i class="bi bi-laptop" style="font-size: 2rem;"></i>
+                            <span class="mt-2">Nuevo Equipo</span>
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="/admin/reports" class="btn btn-outline-warning w-100 h-100 d-flex flex-column align-items-center justify-content-center py-3">
+                            <i class="bi bi-file-earmark-text" style="font-size: 2rem;"></i>
+                            <span class="mt-2">Generar Reporte</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    // Auto-refresh dashboard every 5 minutes
+    setInterval(function() {
+        // Only refresh if user is still on the page
+        if (!document.hidden) {
+            location.reload();
+        }
+    }, 300000); // 5 minutes
+    
+    // Add tooltips to status badges
+    document.addEventListener('DOMContentLoaded', function() {
+        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        const tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+    });
+</script>
+{% endblock %}

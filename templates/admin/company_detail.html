@@ -1,0 +1,345 @@
+{% extends "base.html" %}
+
+{% block title %}{{ company.name }} - Detalles{% endblock %}
+
+{% block page_header %}
+<div class="d-flex justify-content-between align-items-center">
+    <div>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('admin_companies') }}">Empresas</a></li>
+                <li class="breadcrumb-item active">{{ company.name }}</li>
+            </ol>
+        </nav>
+        <h1><i class="bi bi-building"></i> {{ company.name }}</h1>
+    </div>
+    <div>
+        <a href="{{ url_for('admin_company_edit', company_id=company.id) }}" class="btn btn-warning">
+            <i class="bi bi-pencil"></i> Editar
+        </a>
+        {% if current_user.role.value == 'SUPERADMIN' %}
+        <button class="btn btn-danger" 
+                onclick="confirmDelete('{{ company.name }}', '{{ url_for('admin_company_delete', company_id=company.id) }}')">
+            <i class="bi bi-trash"></i> Eliminar
+        </button>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Información de la empresa -->
+    <div class="col-lg-8">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-info-circle"></i> Información General</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label text-muted">Nombre de la empresa</label>
+                        <p class="fw-bold">{{ company.name }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-muted">RUT/ID</label>
+                        <p><code>{{ company.rut_id }}</code></p>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-muted">Contacto</label>
+                        <p>{{ company.contact_name or 'No especificado' }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-muted">Email</label>
+                        <p>
+                            {% if company.email %}
+                            <a href="mailto:{{ company.email }}">{{ company.email }}</a>
+                            {% else %}
+                            No especificado
+                            {% endif %}
+                        </p>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-muted">Teléfono</label>
+                        <p>
+                            {% if company.phone %}
+                            <a href="tel:{{ company.phone }}">{{ company.phone }}</a>
+                            {% else %}
+                            No especificado
+                            {% endif %}
+                        </p>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-muted">Estado</label>
+                        <p>
+                            {% if company.is_active %}
+                            <span class="badge bg-success">Activa</span>
+                            {% else %}
+                            <span class="badge bg-danger">Inactiva</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label text-muted">Dirección</label>
+                        <p>{{ company.address or 'No especificada' }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Configuración de costos -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-calculator"></i> Configuración de Costos</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label text-muted">Costo base por defecto</label>
+                        <p class="fw-bold text-primary">${{ "%.2f"|format(company.costo_base_default) }} {{ company.currency }}</p>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label text-muted">Costo diario por defecto</label>
+                        <p class="fw-bold text-primary">${{ "%.2f"|format(company.costo_diario_default) }} {{ company.currency }}</p>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label text-muted">Moneda</label>
+                        <p><span class="badge bg-info">{{ company.currency }}</span></p>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-muted">IVA</label>
+                        <p>{{ "%.1f"|format(company.iva_percent) }}%</p>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-muted">Incluir IVA</label>
+                        <p>
+                            {% if company.incluir_iva %}
+                            <span class="badge bg-success">Sí</span>
+                            {% else %}
+                            <span class="badge bg-secondary">No</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Equipos recientes -->
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-laptop"></i> Equipos Recientes</h5>
+                <a href="{{ url_for('admin_devices') }}?company={{ company.id }}" class="btn btn-sm btn-outline-primary">
+                    Ver todos
+                </a>
+            </div>
+            <div class="card-body p-0">
+                {% if recent_devices %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Equipo</th>
+                                <th>Estado</th>
+                                <th>Ubicación</th>
+                                <th>Ingreso</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for device in recent_devices %}
+                            <tr>
+                                <td>
+                                    <div>
+                                        <strong>{{ device.name }}</strong>
+                                        {% if device.serial_number %}
+                                        <br><small class="text-muted">S/N: {{ device.serial_number }}</small>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td>
+                                    {% set status_colors = {
+                                        'INGRESADO': 'primary',
+                                        'ESPERANDO_A_RECIBIR': 'warning',
+                                        'ALMACENADO': 'success',
+                                        'ENVIADO': 'info',
+                                        'RETIRADO': 'secondary'
+                                    } %}
+                                    <span class="badge bg-{{ status_colors.get(device.status.value, 'secondary') }}">
+                                        {{ device.status.value.replace('_', ' ').title() }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if device.location %}
+                                    {{ device.location.name }}
+                                    {% else %}
+                                    <span class="text-muted">Sin ubicación</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <small class="text-muted">{{ device.fecha_ingreso.strftime('%d/%m/%Y') }}</small>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="bi bi-laptop text-muted" style="font-size: 2rem;"></i>
+                    <p class="text-muted mt-2">No hay equipos registrados</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Estadísticas y acciones -->
+    <div class="col-lg-4">
+        <!-- Estadísticas -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-graph-up"></i> Estadísticas</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3 text-center">
+                    <div class="col-6">
+                        <div class="border rounded p-3">
+                            <h4 class="text-primary mb-1">{{ stats.total_devices }}</h4>
+                            <small class="text-muted">Total Equipos</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="border rounded p-3">
+                            <h4 class="text-success mb-1">{{ stats.active_devices }}</h4>
+                            <small class="text-muted">Almacenados</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="border rounded p-3">
+                            <h4 class="text-info mb-1">{{ stats.total_users }}</h4>
+                            <small class="text-muted">Usuarios</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="border rounded p-3">
+                            <h4 class="text-warning mb-1">{{ stats.total_locations }}</h4>
+                            <small class="text-muted">Ubicaciones</small>
+                        </div>
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <div class="text-center">
+                    <h5 class="text-success mb-1">${{ "%.2f"|format(stats.monthly_revenue) }} {{ company.currency }}</h5>
+                    <small class="text-muted">Ingresos del mes</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Acciones rápidas -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-lightning"></i> Acciones Rápidas</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('admin_users') }}?company={{ company.id }}" class="btn btn-outline-primary">
+                        <i class="bi bi-people"></i> Gestionar Usuarios
+                    </a>
+                    <a href="{{ url_for('admin_devices') }}?company={{ company.id }}" class="btn btn-outline-success">
+                        <i class="bi bi-laptop"></i> Gestionar Equipos
+                    </a>
+                    <a href="{{ url_for('admin_locations') }}?company={{ company.id }}" class="btn btn-outline-warning">
+                        <i class="bi bi-geo-alt"></i> Gestionar Ubicaciones
+                    </a>
+                    <button class="btn btn-outline-info" onclick="generateReport({{ company.id }})">
+                        <i class="bi bi-file-earmark-pdf"></i> Generar Reporte
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Información adicional -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-clock-history"></i> Información Adicional</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label text-muted">Fecha de creación</label>
+                    <p>{{ company.created_at.strftime('%d/%m/%Y %H:%M') }}</p>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label text-muted">Última actualización</label>
+                    <p>{{ company.updated_at.strftime('%d/%m/%Y %H:%M') if company.updated_at else 'Nunca' }}</p>
+                </div>
+                <div class="mb-0">
+                    <label class="form-label text-muted">Zona horaria</label>
+                    <p>{{ company.timezone or 'America/Montevideo' }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function confirmDelete(companyName, deleteUrl) {
+    if (confirm(`¿Estás seguro de que deseas eliminar la empresa "${companyName}"?\n\nEsta acción no se puede deshacer y eliminará todos los datos asociados.`)) {
+        // Crear formulario para enviar DELETE
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = deleteUrl;
+        
+        const methodInput = document.createElement('input');
+        methodInput.type = 'hidden';
+        methodInput.name = '_method';
+        methodInput.value = 'DELETE';
+        form.appendChild(methodInput);
+        
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+
+function generateReport(companyId) {
+    // Mostrar modal de carga
+    const loadingToast = document.createElement('div');
+    loadingToast.className = 'toast align-items-center text-white bg-info border-0';
+    loadingToast.innerHTML = `
+        <div class="d-flex">
+            <div class="toast-body">
+                <i class="bi bi-hourglass-split"></i> Generando reporte...
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(loadingToast);
+    const toast = new bootstrap.Toast(loadingToast);
+    toast.show();
+    
+    // Simular generación de reporte
+    setTimeout(() => {
+        toast.hide();
+        
+        const successToast = document.createElement('div');
+        successToast.className = 'toast align-items-center text-white bg-success border-0';
+        successToast.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body">
+                    <i class="bi bi-check-circle"></i> Reporte generado exitosamente
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(successToast);
+        const successToastInstance = new bootstrap.Toast(successToast);
+        successToastInstance.show();
+        
+        // Aquí iría la lógica real para descargar el reporte
+        // window.open(`/admin/companies/${companyId}/report`, '_blank');
+    }, 2000);
+}
+</script>
+{% endblock %}

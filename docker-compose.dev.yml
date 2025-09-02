@@ -1,0 +1,142 @@
+# Docker Compose para desarrollo local
+# Uso: docker-compose -f docker-compose.dev.yml up
+
+version: '3.8'
+
+services:
+  # Base de datos PostgreSQL
+  db:
+    image: postgres:15-alpine
+    container_name: storatrack_db_dev
+    environment:
+      POSTGRES_DB: storatrack_dev
+      POSTGRES_USER: storatrack_user
+      POSTGRES_PASSWORD: storatrack_pass
+      POSTGRES_HOST_AUTH_METHOD: trust
+    ports:
+      - "5433:5432"  # Puerto diferente para desarrollo
+    volumes:
+      - postgres_data_dev:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - storatrack_dev
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U storatrack_user -d storatrack_dev"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis para cache y sesiones
+  redis:
+    image: redis:7-alpine
+    container_name: storatrack_redis_dev
+    ports:
+      - "6380:6379"  # Puerto diferente para desarrollo
+    volumes:
+      - redis_data_dev:/data
+    networks:
+      - storatrack_dev
+    restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # Aplicación web (solo para testing, normalmente se ejecuta localmente)
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development  # Usar stage de desarrollo
+    container_name: storatrack_web_dev
+    environment:
+      - ENVIRONMENT=development
+      - DEBUG=true
+      - DATABASE_URL=postgresql://storatrack_user:storatrack_pass@db:5432/storatrack_dev
+      - REDIS_URL=redis://redis:6379/0
+      - SECRET_KEY=dev-secret-key-not-for-production
+      - HOST=0.0.0.0
+      - PORT=8000
+      - RELOAD=true
+    ports:
+      - "8001:8000"  # Puerto diferente para desarrollo
+    volumes:
+      - .:/app
+      - /app/__pycache__
+      - static_files_dev:/app/static
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - storatrack_dev
+    restart: unless-stopped
+    command: >
+      sh -c "python app/init_db.py &&
+             python app/seeds.py &&
+             uvicorn main:app --host 0.0.0.0 --port 8000 --reload"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Adminer para gestión de base de datos
+  adminer:
+    image: adminer:4.8.1
+    container_name: storatrack_adminer_dev
+    ports:
+      - "8080:8080"
+    environment:
+      ADMINER_DEFAULT_SERVER: db
+      ADMINER_DESIGN: pepa-linha
+    depends_on:
+      - db
+    networks:
+      - storatrack_dev
+    restart: unless-stopped
+
+  # MailHog para testing de emails
+  mailhog:
+    image: mailhog/mailhog:v1.0.1
+    container_name: storatrack_mailhog_dev
+    ports:
+      - "1025:1025"  # SMTP
+      - "8025:8025"  # Web UI
+    networks:
+      - storatrack_dev
+    restart: unless-stopped
+
+  # Redis Commander para gestión de Redis
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: storatrack_redis_commander_dev
+    environment:
+      REDIS_HOSTS: local:redis:6379
+      HTTP_USER: admin
+      HTTP_PASSWORD: admin
+    ports:
+      - "8081:8081"
+    depends_on:
+      - redis
+    networks:
+      - storatrack_dev
+    restart: unless-stopped
+
+volumes:
+  postgres_data_dev:
+    driver: local
+  redis_data_dev:
+    driver: local
+  static_files_dev:
+    driver: local
+
+networks:
+  storatrack_dev:
+    driver: bridge
+    name: storatrack_dev_network

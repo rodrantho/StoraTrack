@@ -1,0 +1,463 @@
+{% extends "base.html" %}
+
+{% block title %}Reportes{% endblock %}
+
+{% block page_header %}
+<div class="d-flex justify-content-between align-items-center">
+    <h1><i class="bi bi-file-earmark-bar-graph"></i> Reportes</h1>
+    <div>
+        <button class="btn btn-success" onclick="downloadCurrentReport('pdf')">
+            <i class="bi bi-file-earmark-pdf"></i> Descargar PDF
+        </button>
+        <button class="btn btn-info" onclick="downloadCurrentReport('csv')">
+            <i class="bi bi-file-earmark-spreadsheet"></i> Descargar CSV
+        </button>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Resumen actual -->
+    <div class="col-12">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-calendar-check"></i> Resumen Actual ({{ current_month }})</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <div class="card text-center border-primary">
+                            <div class="card-body">
+                                <h4 class="text-primary">{{ current_stats.total_devices }}</h4>
+                                <small class="text-muted">Total Equipos</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-center border-success">
+                            <div class="card-body">
+                                <h4 class="text-success">{{ current_stats.stored_devices }}</h4>
+                                <small class="text-muted">Almacenados</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-center border-warning">
+                            <div class="card-body">
+                                <h4 class="text-warning">${{ "%.2f"|format(current_stats.monthly_cost) }}</h4>
+                                <small class="text-muted">Costo Mensual</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-center border-info">
+                            <div class="card-body">
+                                <h4 class="text-info">${{ "%.2f"|format(current_stats.total_accumulated) }}</h4>
+                                <small class="text-muted">Total Acumulado</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6><i class="bi bi-info-circle"></i> Información del Período</h6>
+                        <ul class="list-unstyled">
+                            <li><strong>Período:</strong> {{ current_period.start }} - {{ current_period.end }}</li>
+                            <li><strong>Días transcurridos:</strong> {{ current_period.days_elapsed }}</li>
+                            <li><strong>Moneda:</strong> {{ company.currency }}</li>
+                            <li><strong>IVA:</strong> {{ "%.1f"|format(company.iva_percent) }}% 
+                                {% if company.incluir_iva %}
+                                <span class="badge bg-success">Incluido</span>
+                                {% else %}
+                                <span class="badge bg-secondary">No incluido</span>
+                                {% endif %}
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6><i class="bi bi-calculator"></i> Desglose de Costos</h6>
+                        <ul class="list-unstyled">
+                            <li><strong>Costos base:</strong> ${{ "%.2f"|format(current_stats.base_costs) }}</li>
+                            <li><strong>Costos almacenamiento:</strong> ${{ "%.2f"|format(current_stats.storage_costs) }}</li>
+                            <li><strong>Subtotal:</strong> ${{ "%.2f"|format(current_stats.subtotal) }}</li>
+                            <li><strong>IVA:</strong> ${{ "%.2f"|format(current_stats.iva_amount) }}</li>
+                            <li class="border-top pt-2"><strong>Total:</strong> ${{ "%.2f"|format(current_stats.total) }}</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reportes mensuales históricos -->
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-archive"></i> Reportes Mensuales Históricos</h5>
+                <div>
+                    <select class="form-select form-select-sm" id="yearFilter" onchange="filterByYear()">
+                        <option value="">Todos los años</option>
+                        {% for year in available_years %}
+                        <option value="{{ year }}">{{ year }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                {% if monthly_reports %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Período</th>
+                                <th>Equipos</th>
+                                <th>Días Promedio</th>
+                                <th>Costo Base</th>
+                                <th>Costo Almacenamiento</th>
+                                <th>IVA</th>
+                                <th>Total</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for report in monthly_reports %}
+                            <tr data-year="{{ report.year }}">
+                                <td>
+                                    <strong>{{ report.month_name }} {{ report.year }}</strong>
+                                    <br><small class="text-muted">{{ report.period_start.strftime('%d/%m/%Y') }} - {{ report.period_end.strftime('%d/%m/%Y') }}</small>
+                                </td>
+                                <td>
+                                    <span class="badge bg-primary">{{ report.total_devices }}</span>
+                                    {% if report.devices_breakdown %}
+                                    <br><small class="text-muted">{{ report.devices_breakdown }}</small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <strong>{{ "%.1f"|format(report.average_days) }}</strong>
+                                    <br><small class="text-muted">días</small>
+                                </td>
+                                <td>${{ "%.2f"|format(report.total_base_cost) }}</td>
+                                <td>${{ "%.2f"|format(report.total_storage_cost) }}</td>
+                                <td>${{ "%.2f"|format(report.total_iva) }}</td>
+                                <td>
+                                    <strong class="text-success">${{ "%.2f"|format(report.total_amount) }}</strong>
+                                    <br><small class="text-muted">{{ report.currency }}</small>
+                                </td>
+                                <td>
+                                    {% if report.is_closed %}
+                                    <span class="badge bg-success">Cerrado</span>
+                                    {% else %}
+                                    <span class="badge bg-warning">Abierto</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <button class="btn btn-outline-info" onclick="viewReportDetail({{ report.id }})" title="Ver detalle">
+                                            <i class="bi bi-eye"></i>
+                                        </button>
+                                        <button class="btn btn-outline-danger" onclick="downloadReport({{ report.id }}, 'pdf')" title="Descargar PDF">
+                                            <i class="bi bi-file-earmark-pdf"></i>
+                                        </button>
+                                        <button class="btn btn-outline-success" onclick="downloadReport({{ report.id }}, 'csv')" title="Descargar CSV">
+                                            <i class="bi bi-file-earmark-spreadsheet"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="bi bi-file-earmark-bar-graph text-muted" style="font-size: 3rem;"></i>
+                    <h5 class="text-muted mt-3">No hay reportes mensuales disponibles</h5>
+                    <p class="text-muted">Los reportes se generan automáticamente al final de cada mes.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Detalle de Reporte -->
+<div class="modal fade" id="reportDetailModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-file-earmark-bar-graph"></i> Detalle del Reporte</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="reportDetailBody">
+                <!-- Contenido dinámico -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-danger" onclick="downloadCurrentReportDetail('pdf')">
+                    <i class="bi bi-file-earmark-pdf"></i> PDF
+                </button>
+                <button type="button" class="btn btn-success" onclick="downloadCurrentReportDetail('csv')">
+                    <i class="bi bi-file-earmark-spreadsheet"></i> CSV
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Progreso de Descarga -->
+<div class="modal fade" id="downloadModal" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-body text-center">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Generando reporte...</span>
+                </div>
+                <p class="mt-3 mb-0">Generando reporte...</p>
+                <small class="text-muted">Por favor espere</small>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentReportId = null;
+
+function downloadCurrentReport(format) {
+    showDownloadModal();
+    
+    fetch(`/client/reports/current/${format}`)
+        .then(response => {
+            if (!response.ok) throw new Error('Error al generar el reporte');
+            return response.blob();
+        })
+        .then(blob => {
+            hideDownloadModal();
+            
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            
+            const date = new Date().toISOString().split('T')[0];
+            const filename = `reporte_actual_{{ company.name|replace(' ', '_') }}_${date}.${format}`;
+            link.download = filename;
+            
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            window.URL.revokeObjectURL(url);
+            showAlert(`Reporte ${format.toUpperCase()} descargado exitosamente`, 'success');
+        })
+        .catch(error => {
+            hideDownloadModal();
+            console.error('Error:', error);
+            showAlert('Error al generar el reporte', 'danger');
+        });
+}
+
+function downloadReport(reportId, format) {
+    showDownloadModal();
+    
+    fetch(`/client/reports/${reportId}/${format}`)
+        .then(response => {
+            if (!response.ok) throw new Error('Error al descargar el reporte');
+            return response.blob();
+        })
+        .then(blob => {
+            hideDownloadModal();
+            
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            
+            const filename = `reporte_mensual_${reportId}.${format}`;
+            link.download = filename;
+            
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            window.URL.revokeObjectURL(url);
+            showAlert(`Reporte ${format.toUpperCase()} descargado exitosamente`, 'success');
+        })
+        .catch(error => {
+            hideDownloadModal();
+            console.error('Error:', error);
+            showAlert('Error al descargar el reporte', 'danger');
+        });
+}
+
+function viewReportDetail(reportId) {
+    currentReportId = reportId;
+    showLoading('Cargando detalle del reporte...');
+    
+    fetch(`/client/reports/${reportId}/detail`)
+        .then(response => response.json())
+        .then(data => {
+            hideLoading();
+            
+            const modalBody = document.getElementById('reportDetailBody');
+            modalBody.innerHTML = `
+                <div class="row g-3">
+                    <!-- Información del reporte -->
+                    <div class="col-12">
+                        <div class="alert alert-info">
+                            <h6><i class="bi bi-info-circle"></i> ${data.month_name} ${data.year}</h6>
+                            <p class="mb-1"><strong>Período:</strong> ${data.period_start} - ${data.period_end}</p>
+                            <p class="mb-0"><strong>Estado:</strong> 
+                                <span class="badge bg-${data.is_closed ? 'success' : 'warning'}">
+                                    ${data.is_closed ? 'Cerrado' : 'Abierto'}
+                                </span>
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <!-- Resumen financiero -->
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h6 class="mb-0"><i class="bi bi-calculator"></i> Resumen Financiero</h6>
+                            </div>
+                            <div class="card-body">
+                                <ul class="list-unstyled mb-0">
+                                    <li><strong>Costo Base:</strong> $${data.total_base_cost.toFixed(2)}</li>
+                                    <li><strong>Costo Almacenamiento:</strong> $${data.total_storage_cost.toFixed(2)}</li>
+                                    <li><strong>Subtotal:</strong> $${data.subtotal.toFixed(2)}</li>
+                                    <li><strong>IVA (${data.iva_percent}%):</strong> $${data.total_iva.toFixed(2)}</li>
+                                    <li class="border-top pt-2"><strong>Total:</strong> $${data.total_amount.toFixed(2)} ${data.currency}</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Estadísticas de equipos -->
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h6 class="mb-0"><i class="bi bi-laptop"></i> Estadísticas de Equipos</h6>
+                            </div>
+                            <div class="card-body">
+                                <ul class="list-unstyled mb-0">
+                                    <li><strong>Total Equipos:</strong> ${data.total_devices}</li>
+                                    <li><strong>Días Promedio:</strong> ${data.average_days.toFixed(1)}</li>
+                                    <li><strong>Costo Promedio:</strong> $${data.average_cost.toFixed(2)}</li>
+                                    <li><strong>Equipos Activos:</strong> ${data.active_devices}</li>
+                                    <li><strong>Equipos Retirados:</strong> ${data.retired_devices}</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Detalle de equipos -->
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h6 class="mb-0"><i class="bi bi-list-ul"></i> Detalle de Equipos</h6>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="table-responsive">
+                                    <table class="table table-sm mb-0">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Equipo</th>
+                                                <th>Estado</th>
+                                                <th>Días</th>
+                                                <th>Costo Base</th>
+                                                <th>Costo Almac.</th>
+                                                <th>Total</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            ${data.devices.map(device => `
+                                                <tr>
+                                                    <td>
+                                                        <strong>${device.name}</strong>
+                                                        <br><small class="text-muted">${device.serial_number || 'S/N: N/A'}</small>
+                                                    </td>
+                                                    <td>
+                                                        <span class="badge bg-${getStatusColor(device.status)}">
+                                                            ${device.status.replace('_', ' ')}
+                                                        </span>
+                                                    </td>
+                                                    <td>${device.days_in_period}</td>
+                                                    <td>$${device.base_cost.toFixed(2)}</td>
+                                                    <td>$${device.storage_cost.toFixed(2)}</td>
+                                                    <td><strong>$${device.total_cost.toFixed(2)}</strong></td>
+                                                </tr>
+                                            `).join('')}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            new bootstrap.Modal(document.getElementById('reportDetailModal')).show();
+        })
+        .catch(error => {
+            hideLoading();
+            console.error('Error:', error);
+            showAlert('Error al cargar el detalle del reporte', 'danger');
+        });
+}
+
+function downloadCurrentReportDetail(format) {
+    if (currentReportId) {
+        downloadReport(currentReportId, format);
+    }
+}
+
+function filterByYear() {
+    const yearFilter = document.getElementById('yearFilter').value;
+    const rows = document.querySelectorAll('tbody tr[data-year]');
+    
+    rows.forEach(row => {
+        const rowYear = row.getAttribute('data-year');
+        if (!yearFilter || rowYear === yearFilter) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+}
+
+function getStatusColor(status) {
+    const colors = {
+        'INGRESADO': 'primary',
+        'ESPERANDO_A_RECIBIR': 'warning',
+        'ALMACENADO': 'success',
+        'ENVIADO': 'info',
+        'RETIRADO': 'secondary'
+    };
+    return colors[status] || 'secondary';
+}
+
+function showDownloadModal() {
+    new bootstrap.Modal(document.getElementById('downloadModal')).show();
+}
+
+function hideDownloadModal() {
+    const modal = bootstrap.Modal.getInstance(document.getElementById('downloadModal'));
+    if (modal) {
+        modal.hide();
+    }
+}
+
+function showLoading(message) {
+    console.log(message);
+}
+
+function hideLoading() {
+    console.log('Loading hidden');
+}
+</script>
+{% endblock %}

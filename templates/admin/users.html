@@ -1,0 +1,420 @@
+{% extends "base.html" %}
+
+{% block title %}Gestión de Usuarios{% endblock %}
+
+{% block page_header %}
+<div class="d-flex justify-content-between align-items-center">
+    <h1><i class="bi bi-people"></i> Gestión de Usuarios</h1>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createUserModal">
+        <i class="bi bi-person-plus"></i> Nuevo Usuario
+    </button>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <!-- Filtros -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <form method="get" class="row g-3">
+                    <div class="col-md-3">
+                        <label for="search" class="form-label">Buscar</label>
+                        <input type="text" class="form-control" id="search" name="search" 
+                               value="{{ request.query_params.get('search', '') }}" 
+                               placeholder="Nombre o email...">
+                    </div>
+                    <div class="col-md-2">
+                        <label for="role" class="form-label">Rol</label>
+                        <select class="form-select" id="role" name="role">
+                            <option value="">Todos</option>
+                            <option value="SUPERADMIN" {% if request.query_params.get('role') == 'SUPERADMIN' %}selected{% endif %}>Superadmin</option>
+                            <option value="STAFF" {% if request.query_params.get('role') == 'STAFF' %}selected{% endif %}>Staff</option>
+                            <option value="CLIENT_USER" {% if request.query_params.get('role') == 'CLIENT_USER' %}selected{% endif %}>Cliente</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="company" class="form-label">Empresa</label>
+                        <select class="form-select" id="company" name="company">
+                            <option value="">Todas</option>
+                            {% for company in companies %}
+                            <option value="{{ company.id }}" {% if request.query_params.get('company') == company.id|string %}selected{% endif %}>
+                                {{ company.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label for="status" class="form-label">Estado</label>
+                        <select class="form-select" id="status" name="status">
+                            <option value="">Todos</option>
+                            <option value="active" {% if request.query_params.get('status') == 'active' %}selected{% endif %}>Activos</option>
+                            <option value="inactive" {% if request.query_params.get('status') == 'inactive' %}selected{% endif %}>Inactivos</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button type="submit" class="btn btn-outline-primary me-2">
+                            <i class="bi bi-search"></i> Filtrar
+                        </button>
+                        <a href="{{ url_for('admin_users') }}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-clockwise"></i>
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Tabla de usuarios -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Usuarios ({{ users|length }})</h5>
+            </div>
+            <div class="card-body p-0">
+                {% if users %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Usuario</th>
+                                <th>Rol</th>
+                                <th>Empresa</th>
+                                <th>Estado</th>
+                                <th>Último acceso</th>
+                                <th>Creado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for user in users %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar-circle me-3">
+                                            {{ user.full_name[0].upper() if user.full_name else user.email[0].upper() }}
+                                        </div>
+                                        <div>
+                                            <strong>{{ user.full_name or 'Sin nombre' }}</strong>
+                                            <br><small class="text-muted">{{ user.email }}</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    {% set role_colors = {
+                                        'SUPERADMIN': 'danger',
+                                        'STAFF': 'warning',
+                                        'CLIENT_USER': 'info'
+                                    } %}
+                                    <span class="badge bg-{{ role_colors.get(user.role.value, 'secondary') }}">
+                                        {{ user.role.value.replace('_', ' ').title() }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if user.company %}
+                                    <a href="{{ url_for('admin_company_detail', company_id=user.company.id) }}">
+                                        {{ user.company.name }}
+                                    </a>
+                                    {% else %}
+                                    <span class="text-muted">Todas las empresas</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if user.is_active %}
+                                    <span class="badge bg-success">Activo</span>
+                                    {% else %}
+                                    <span class="badge bg-danger">Inactivo</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if user.last_login %}
+                                    <small class="text-muted">{{ user.last_login.strftime('%d/%m/%Y %H:%M') }}</small>
+                                    {% else %}
+                                    <small class="text-muted">Nunca</small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <small class="text-muted">{{ user.created_at.strftime('%d/%m/%Y') }}</small>
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <button class="btn btn-outline-primary" 
+                                                onclick="viewUser({{ user.id }})" title="Ver detalles">
+                                            <i class="bi bi-eye"></i>
+                                        </button>
+                                        <button class="btn btn-outline-warning" 
+                                                onclick="editUser({{ user.id }})" title="Editar">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                        {% if user.id != current_user.id and current_user.role.value == 'SUPERADMIN' %}
+                                        <button class="btn btn-outline-danger" 
+                                                onclick="confirmDeleteUser('{{ user.full_name or user.email }}', {{ user.id }})"
+                                                title="Eliminar">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                        {% endif %}
+                                        {% if user.is_active %}
+                                        <button class="btn btn-outline-secondary" 
+                                                onclick="toggleUserStatus({{ user.id }}, false)" title="Desactivar">
+                                            <i class="bi bi-person-x"></i>
+                                        </button>
+                                        {% else %}
+                                        <button class="btn btn-outline-success" 
+                                                onclick="toggleUserStatus({{ user.id }}, true)" title="Activar">
+                                            <i class="bi bi-person-check"></i>
+                                        </button>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="bi bi-people text-muted" style="font-size: 3rem;"></i>
+                    <h5 class="text-muted mt-3">No hay usuarios registrados</h5>
+                    <p class="text-muted">Comienza creando tu primer usuario</p>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createUserModal">
+                        <i class="bi bi-person-plus"></i> Nuevo Usuario
+                    </button>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Crear Usuario -->
+<div class="modal fade" id="createUserModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-person-plus"></i> Nuevo Usuario</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{{ url_for('admin_user_create') }}">
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="email" class="form-label">Email *</label>
+                            <input type="email" class="form-control" id="email" name="email" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="full_name" class="form-label">Nombre completo *</label>
+                            <input type="text" class="form-control" id="full_name" name="full_name" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="password" class="form-label">Contraseña *</label>
+                            <input type="password" class="form-control" id="password" name="password" required minlength="6">
+                            <div class="form-text">Mínimo 6 caracteres</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="confirm_password" class="form-label">Confirmar contraseña *</label>
+                            <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="role" class="form-label">Rol *</label>
+                            <select class="form-select" id="role" name="role" required onchange="toggleCompanyField()">
+                                <option value="">Seleccionar rol...</option>
+                                {% if current_user.role.value == 'SUPERADMIN' %}
+                                <option value="SUPERADMIN">Superadmin</option>
+                                {% endif %}
+                                <option value="STAFF">Staff</option>
+                                <option value="CLIENT_USER">Cliente</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6" id="companyField" style="display: none;">
+                            <label for="company_id" class="form-label">Empresa *</label>
+                            <select class="form-select" id="company_id" name="company_id">
+                                <option value="">Seleccionar empresa...</option>
+                                {% for company in companies %}
+                                <option value="{{ company.id }}">{{ company.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="is_active" name="is_active" checked>
+                                <label class="form-check-label" for="is_active">
+                                    Usuario activo
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check-circle"></i> Crear Usuario
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Ver/Editar Usuario -->
+<div class="modal fade" id="userModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="userModalTitle"></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="userModalBody">
+                <!-- Contenido dinámico -->
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.avatar-circle {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+    font-size: 16px;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function toggleCompanyField() {
+    const roleSelect = document.getElementById('role');
+    const companyField = document.getElementById('companyField');
+    const companySelect = document.getElementById('company_id');
+    
+    if (roleSelect.value === 'CLIENT_USER') {
+        companyField.style.display = 'block';
+        companySelect.required = true;
+    } else {
+        companyField.style.display = 'none';
+        companySelect.required = false;
+        companySelect.value = '';
+    }
+}
+
+function viewUser(userId) {
+    fetch(`/admin/users/${userId}`)
+        .then(response => response.json())
+        .then(user => {
+            document.getElementById('userModalTitle').innerHTML = `<i class="bi bi-person"></i> ${user.full_name || user.email}`;
+            
+            const modalBody = document.getElementById('userModalBody');
+            modalBody.innerHTML = `
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label text-muted">Email</label>
+                        <p>${user.email}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-muted">Nombre completo</label>
+                        <p>${user.full_name || 'No especificado'}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-muted">Rol</label>
+                        <p><span class="badge bg-info">${user.role.replace('_', ' ')}</span></p>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-muted">Empresa</label>
+                        <p>${user.company ? user.company.name : 'Todas las empresas'}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-muted">Estado</label>
+                        <p><span class="badge bg-${user.is_active ? 'success' : 'danger'}">${user.is_active ? 'Activo' : 'Inactivo'}</span></p>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-muted">Último acceso</label>
+                        <p>${user.last_login ? new Date(user.last_login).toLocaleString('es-UY') : 'Nunca'}</p>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label text-muted">Fecha de creación</label>
+                        <p>${new Date(user.created_at).toLocaleString('es-UY')}</p>
+                    </div>
+                </div>
+            `;
+            
+            new bootstrap.Modal(document.getElementById('userModal')).show();
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert('Error al cargar los datos del usuario', 'danger');
+        });
+}
+
+function editUser(userId) {
+    // Implementar edición de usuario
+    showAlert('Función de edición en desarrollo', 'info');
+}
+
+function confirmDeleteUser(userName, userId) {
+    if (confirm(`¿Estás seguro de que deseas eliminar al usuario "${userName}"?\n\nEsta acción no se puede deshacer.`)) {
+        fetch(`/admin/users/${userId}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => {
+            if (response.ok) {
+                showAlert('Usuario eliminado exitosamente', 'success');
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                showAlert('Error al eliminar el usuario', 'danger');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert('Error al eliminar el usuario', 'danger');
+        });
+    }
+}
+
+function toggleUserStatus(userId, activate) {
+    const action = activate ? 'activar' : 'desactivar';
+    
+    if (confirm(`¿Estás seguro de que deseas ${action} este usuario?`)) {
+        fetch(`/admin/users/${userId}/toggle-status`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ is_active: activate })
+        })
+        .then(response => {
+            if (response.ok) {
+                showAlert(`Usuario ${activate ? 'activado' : 'desactivado'} exitosamente`, 'success');
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                showAlert(`Error al ${action} el usuario`, 'danger');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert(`Error al ${action} el usuario`, 'danger');
+        });
+    }
+}
+
+// Validación de contraseñas
+document.getElementById('confirm_password').addEventListener('input', function() {
+    const password = document.getElementById('password').value;
+    const confirmPassword = this.value;
+    
+    if (password !== confirmPassword) {
+        this.setCustomValidity('Las contraseñas no coinciden');
+    } else {
+        this.setCustomValidity('');
+    }
+});
+</script>
+{% endblock %}

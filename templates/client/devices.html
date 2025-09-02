@@ -1,0 +1,446 @@
+{% extends "base.html" %}
+
+{% block title %}Mis Equipos{% endblock %}
+
+{% block page_header %}
+<div class="d-flex justify-content-between align-items-center">
+    <h1><i class="bi bi-laptop"></i> Mis Equipos</h1>
+    <div>
+        <button class="btn btn-outline-primary" onclick="calculateTotalCost()">
+            <i class="bi bi-calculator"></i> Calcular Costo Total
+        </button>
+        <div class="btn-group" role="group">
+            <button class="btn btn-success" onclick="downloadReport('pdf')">
+                <i class="bi bi-file-earmark-pdf"></i> PDF
+            </button>
+            <button class="btn btn-info" onclick="downloadReport('csv')">
+                <i class="bi bi-file-earmark-spreadsheet"></i> CSV
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <!-- Filtros -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <form method="get" class="row g-3">
+                    <div class="col-md-3">
+                        <label for="search" class="form-label">Buscar</label>
+                        <input type="text" class="form-control" id="search" name="search" 
+                               value="{{ request.query_params.get('search', '') }}" 
+                               placeholder="Nombre, serie, modelo...">
+                    </div>
+                    <div class="col-md-2">
+                        <label for="status" class="form-label">Estado</label>
+                        <select class="form-select" id="status" name="status">
+                            <option value="">Todos</option>
+                            <option value="INGRESADO" {% if request.query_params.get('status') == 'INGRESADO' %}selected{% endif %}>Ingresado</option>
+                            <option value="ESPERANDO_A_RECIBIR" {% if request.query_params.get('status') == 'ESPERANDO_A_RECIBIR' %}selected{% endif %}>Esperando</option>
+                            <option value="ALMACENADO" {% if request.query_params.get('status') == 'ALMACENADO' %}selected{% endif %}>Almacenado</option>
+                            <option value="ENVIADO" {% if request.query_params.get('status') == 'ENVIADO' %}selected{% endif %}>Enviado</option>
+                            <option value="RETIRADO" {% if request.query_params.get('status') == 'RETIRADO' %}selected{% endif %}>Retirado</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label for="location" class="form-label">Ubicación</label>
+                        <select class="form-select" id="location" name="location">
+                            <option value="">Todas</option>
+                            {% for location in locations %}
+                            <option value="{{ location.id }}" {% if request.query_params.get('location') == location.id|string %}selected{% endif %}>
+                                {{ location.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label for="tag" class="form-label">Etiqueta</label>
+                        <select class="form-select" id="tag" name="tag">
+                            <option value="">Todas</option>
+                            {% for tag in tags %}
+                            <option value="{{ tag.id }}" {% if request.query_params.get('tag') == tag.id|string %}selected{% endif %}>
+                                {{ tag.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label for="sort" class="form-label">Ordenar</label>
+                        <select class="form-select" id="sort" name="sort">
+                            <option value="fecha_ingreso_desc" {% if request.query_params.get('sort') == 'fecha_ingreso_desc' %}selected{% endif %}>Más recientes</option>
+                            <option value="fecha_ingreso_asc" {% if request.query_params.get('sort') == 'fecha_ingreso_asc' %}selected{% endif %}>Más antiguos</option>
+                            <option value="name_asc" {% if request.query_params.get('sort') == 'name_asc' %}selected{% endif %}>Nombre A-Z</option>
+                            <option value="name_desc" {% if request.query_params.get('sort') == 'name_desc' %}selected{% endif %}>Nombre Z-A</option>
+                        </select>
+                    </div>
+                    <div class="col-md-1 d-flex align-items-end">
+                        <button type="submit" class="btn btn-outline-primary me-2">
+                            <i class="bi bi-search"></i>
+                        </button>
+                        <a href="{{ url_for('client_devices') }}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-clockwise"></i>
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Resumen de equipos -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h4 class="text-primary">{{ devices|length }}</h4>
+                        <small class="text-muted">Total Equipos</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h4 class="text-success">{{ devices|selectattr('status.value', 'equalto', 'ALMACENADO')|list|length }}</h4>
+                        <small class="text-muted">Almacenados</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h4 class="text-warning">{{ devices|selectattr('status.value', 'in', ['INGRESADO', 'ESPERANDO_A_RECIBIR'])|list|length }}</h4>
+                        <small class="text-muted">En Proceso</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h4 class="text-info">{{ devices|selectattr('status.value', 'in', ['ENVIADO', 'RETIRADO'])|list|length }}</h4>
+                        <small class="text-muted">Finalizados</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Lista de equipos -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Equipos ({{ devices|length }})</h5>
+            </div>
+            <div class="card-body p-0">
+                {% if devices %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Equipo</th>
+                                <th>Estado</th>
+                                <th>Ubicación</th>
+                                <th>Etiquetas</th>
+                                <th>Días</th>
+                                <th>Costo Actual</th>
+                                <th>Ingreso</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for device in devices %}
+                            <tr>
+                                <td>
+                                    <div>
+                                        <strong>{{ device.name }}</strong>
+                                        {% if device.brand or device.model %}
+                                        <br><small class="text-muted">{{ device.brand }} {{ device.model }}</small>
+                                        {% endif %}
+                                        {% if device.serial_number %}
+                                        <br><small class="text-muted">S/N: {{ device.serial_number }}</small>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td>
+                                    {% set status_colors = {
+                                        'INGRESADO': 'primary',
+                                        'ESPERANDO_A_RECIBIR': 'warning',
+                                        'ALMACENADO': 'success',
+                                        'ENVIADO': 'info',
+                                        'RETIRADO': 'secondary'
+                                    } %}
+                                    <span class="badge bg-{{ status_colors.get(device.status.value, 'secondary') }}">
+                                        {{ device.status.value.replace('_', ' ').title() }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if device.location %}
+                                    <small>{{ device.location.name }}</small>
+                                    {% else %}
+                                    <span class="text-muted">Sin ubicación</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% for tag in device.tags %}
+                                    <span class="badge" style="background-color: {{ tag.color }}; color: white; font-size: 0.7em;">
+                                        {{ tag.name }}
+                                    </span>
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    {% set days = (now() - device.fecha_ingreso).days + 1 %}
+                                    <span class="fw-bold">{{ days }}</span>
+                                    <small class="text-muted">días</small>
+                                </td>
+                                <td>
+                                    {% set cost = calculate_device_cost(device) %}
+                                    <span class="fw-bold text-success">${{ "%.2f"|format(cost) }}</span>
+                                    <small class="text-muted">{{ device.company.currency }}</small>
+                                </td>
+                                <td>
+                                    <small class="text-muted">{{ device.fecha_ingreso.strftime('%d/%m/%Y') }}</small>
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <a href="{{ url_for('client_device_detail', device_id=device.id) }}" 
+                                           class="btn btn-outline-primary" title="Ver detalles">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        <button class="btn btn-outline-info" 
+                                                onclick="generateQR({{ device.id }})" title="Generar QR">
+                                            <i class="bi bi-qr-code"></i>
+                                        </button>
+                                        <button class="btn btn-outline-success" 
+                                                onclick="printLabel({{ device.id }})" title="Imprimir etiqueta">
+                                            <i class="bi bi-printer"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="bi bi-laptop text-muted" style="font-size: 3rem;"></i>
+                    <h5 class="text-muted mt-3">No hay equipos registrados</h5>
+                    <p class="text-muted">Contacta con el administrador para agregar equipos</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Cálculo de Costo Total -->
+<div class="modal fade" id="costCalculationModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-calculator"></i> Cálculo de Costo Total</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="costCalculationBody">
+                <!-- Contenido dinámico -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-primary" onclick="downloadCostReport()">
+                    <i class="bi bi-download"></i> Descargar Reporte
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal QR Code -->
+<div class="modal fade" id="qrModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-qr-code"></i> Código QR</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center" id="qrModalBody">
+                <!-- QR Code dinámico -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-primary" onclick="downloadQR()">
+                    <i class="bi bi-download"></i> Descargar QR
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function calculateTotalCost() {
+    showLoading('Calculando costos...');
+    
+    fetch('/client/calculate-total-cost')
+        .then(response => response.json())
+        .then(data => {
+            hideLoading();
+            
+            const modalBody = document.getElementById('costCalculationBody');
+            modalBody.innerHTML = `
+                <div class="row g-3">
+                    <div class="col-12">
+                        <div class="alert alert-info">
+                            <h6><i class="bi bi-info-circle"></i> Resumen de Costos</h6>
+                            <p class="mb-0">Cálculo realizado hasta: <strong>${new Date().toLocaleDateString('es-UY')}</strong></p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <h4 class="text-primary">$${data.subtotal.toFixed(2)}</h4>
+                                <small class="text-muted">Subtotal</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <h4 class="text-warning">$${data.iva.toFixed(2)}</h4>
+                                <small class="text-muted">IVA (${data.iva_percent}%)</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <div class="card bg-success text-white text-center">
+                            <div class="card-body">
+                                <h3>$${data.total.toFixed(2)} ${data.currency}</h3>
+                                <p class="mb-0">Total a Pagar</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <small class="text-muted">
+                            <strong>Equipos incluidos:</strong> ${data.devices_count} equipos activos<br>
+                            <strong>Días promedio:</strong> ${data.average_days} días
+                        </small>
+                    </div>
+                </div>
+            `;
+            
+            new bootstrap.Modal(document.getElementById('costCalculationModal')).show();
+        })
+        .catch(error => {
+            hideLoading();
+            console.error('Error:', error);
+            showAlert('Error al calcular los costos', 'danger');
+        });
+}
+
+function downloadReport(format) {
+    showLoading(`Generando reporte ${format.toUpperCase()}...`);
+    
+    const url = `/client/download-report?format=${format}`;
+    
+    // Crear enlace temporal para descarga
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `reporte_equipos_${new Date().toISOString().split('T')[0]}.${format}`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    setTimeout(() => {
+        hideLoading();
+        showAlert(`Reporte ${format.toUpperCase()} descargado exitosamente`, 'success');
+    }, 2000);
+}
+
+function generateQR(deviceId) {
+    showLoading('Generando código QR...');
+    
+    fetch(`/client/devices/${deviceId}/qr`)
+        .then(response => response.json())
+        .then(data => {
+            hideLoading();
+            
+            const modalBody = document.getElementById('qrModalBody');
+            modalBody.innerHTML = `
+                <div class="mb-3">
+                    <h6>${data.device_name}</h6>
+                    <small class="text-muted">S/N: ${data.serial_number || 'N/A'}</small>
+                </div>
+                <div class="mb-3">
+                    <img src="data:image/png;base64,${data.qr_code}" alt="QR Code" class="img-fluid" style="max-width: 200px;">
+                </div>
+                <div>
+                    <small class="text-muted">Código: ${data.qr_text}</small>
+                </div>
+            `;
+            
+            // Guardar datos para descarga
+            window.currentQRData = data;
+            
+            new bootstrap.Modal(document.getElementById('qrModal')).show();
+        })
+        .catch(error => {
+            hideLoading();
+            console.error('Error:', error);
+            showAlert('Error al generar el código QR', 'danger');
+        });
+}
+
+function downloadQR() {
+    if (window.currentQRData) {
+        const link = document.createElement('a');
+        link.href = `data:image/png;base64,${window.currentQRData.qr_code}`;
+        link.download = `qr_${window.currentQRData.serial_number || 'device'}.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        showAlert('Código QR descargado exitosamente', 'success');
+    }
+}
+
+function printLabel(deviceId) {
+    showLoading('Preparando etiqueta para impresión...');
+    
+    fetch(`/client/devices/${deviceId}/print-label`)
+        .then(response => response.blob())
+        .then(blob => {
+            hideLoading();
+            
+            // Crear URL temporal para el PDF
+            const url = window.URL.createObjectURL(blob);
+            
+            // Abrir en nueva ventana para imprimir
+            const printWindow = window.open(url, '_blank');
+            printWindow.onload = function() {
+                printWindow.print();
+            };
+            
+            showAlert('Etiqueta preparada para impresión', 'success');
+        })
+        .catch(error => {
+            hideLoading();
+            console.error('Error:', error);
+            showAlert('Error al preparar la etiqueta', 'danger');
+        });
+}
+
+function downloadCostReport() {
+    downloadReport('pdf');
+    bootstrap.Modal.getInstance(document.getElementById('costCalculationModal')).hide();
+}
+
+// Función auxiliar para mostrar loading
+function showLoading(message) {
+    // Implementar loading spinner
+    console.log(message);
+}
+
+function hideLoading() {
+    // Ocultar loading spinner
+    console.log('Loading hidden');
+}
+</script>
+{% endblock %}
