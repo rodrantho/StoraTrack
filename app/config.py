@@ -46,6 +46,20 @@ class Settings(BaseSettings):
     smtp_username: Optional[str] = os.getenv("SMTP_USERNAME")
     smtp_password: Optional[str] = os.getenv("SMTP_PASSWORD")
     
+    # Configuración de logging
+    log_level: str = "INFO"
+    
+    # Configuración de Redis para caché
+    redis_host: str = "localhost"
+    redis_port: int = 6379
+    redis_db: int = 0
+    redis_password: Optional[str] = None
+    
+    # Configuración de caché
+    cache_enabled: bool = True
+    cache_default_expire: int = 300  # 5 minutos
+    cache_stats_expire: int = 60     # 1 minuto para estadísticas
+    
     class Config:
         env_file = ".env"
         case_sensitive = False

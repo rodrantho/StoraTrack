@@ -25,7 +25,7 @@
         <a href="/admin/devices/{{ device.id }}/edit" class="btn btn-warning">
             <i class="bi bi-pencil"></i> Editar
         </a>
-        {% if current_user.role in ['SUPERADMIN', 'STAFF'] %}
+        {% if current_user.role.value in ['superadmin', 'staff'] %}
         <button class="btn btn-danger" onclick="confirmDeleteDevice({{ device.id }}, '{{ device.name }}')">
             <i class="bi bi-trash"></i> Eliminar
         </button>

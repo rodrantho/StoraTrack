@@ -23,6 +23,7 @@ from app.auth import (
     check_company_access, get_password_hash
 )
 from app.config import settings
+from app.utils.cache import invalidate_cache_pattern
 
 router = APIRouter()
 
@@ -59,6 +60,11 @@ async def create_company(
     db.add(db_company)
     db.commit()
     db.refresh(db_company)
+    
+    # Invalidar caché
+    invalidate_cache_pattern("dashboard_stats*")
+    invalidate_cache_pattern("companies_list*")
+    
     return db_company
 
 @router.get("/companies/{company_id}", response_model=CompanySchema, tags=["Companies"])
@@ -107,6 +113,11 @@ async def update_company(
     company.updated_at = now_local()
     db.commit()
     db.refresh(company)
+    
+    # Invalidar caché
+    invalidate_cache_pattern("dashboard_stats*")
+    invalidate_cache_pattern("companies_list*")
+    
     return company
 
 @router.delete("/companies/{company_id}", response_model=MessageResponse, tags=["Companies"])
@@ -130,6 +141,10 @@ async def delete_company(
     company.is_active = False
     company.updated_at = datetime.utcnow()
     db.commit()
+    
+    # Invalidar caché
+    invalidate_cache_pattern("dashboard_stats*")
+    invalidate_cache_pattern("companies_list*")
     
     return MessageResponse(message="Empresa eliminada exitosamente")
 
@@ -167,7 +182,7 @@ async def create_user(
         )
     
     # Solo superadmin puede crear otros superadmin
-    if user.role == UserRole.SUPERADMIN and current_user.role != UserRole.SUPERADMIN:
+    if user.role.value == "superadmin" and current_user.role.value != "superadmin":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="No tienes permisos para crear superadministradores"
@@ -197,7 +212,7 @@ async def get_devices(
     query = db.query(Device).filter(Device.is_active == True)
     
     # Filtrar por empresa según permisos
-    if current_user.role == UserRole.CLIENT_USER:
+    if current_user.role.value == "client_user":
         if not current_user.company_id:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -272,6 +287,9 @@ async def create_device(
     db.add(movement)
     db.commit()
     
+    # Invalidar caché
+    invalidate_cache_pattern("dashboard_stats*")
+    
     return db_device
 
 @router.get("/devices/{device_id}", response_model=DeviceSchema, tags=["Devices"])
@@ -287,7 +305,7 @@ async def get_device(
     )
     
     # Filtrar por empresa si es cliente
-    if current_user.role == UserRole.CLIENT_USER:
+    if current_user.role.value == "client_user":
         if not current_user.company_id:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -369,6 +387,10 @@ async def update_device(
         db.commit()
     
     db.refresh(device)
+    
+    # Invalidar caché
+    invalidate_cache_pattern("dashboard_stats*")
+    
     return device
 
 # Locations API
@@ -442,6 +464,11 @@ async def create_location(
     
     db.commit()
     db.refresh(db_location)
+    
+    # Invalidar caché
+    invalidate_cache_pattern("dashboard_stats*")
+    invalidate_cache_pattern("locations_list*")
+    
     return db_location
 
 # Dashboard API

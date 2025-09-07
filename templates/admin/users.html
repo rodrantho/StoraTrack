@@ -49,9 +49,9 @@
                         <label for="role" class="form-label">Rol</label>
                         <select class="form-select" id="role" name="role">
                             <option value="">Todos</option>
-                            <option value="SUPERADMIN" {% if request.query_params.get('role') == 'SUPERADMIN' %}selected{% endif %}>Superadmin</option>
-                            <option value="STAFF" {% if request.query_params.get('role') == 'STAFF' %}selected{% endif %}>Staff</option>
-                            <option value="CLIENT_USER" {% if request.query_params.get('role') == 'CLIENT_USER' %}selected{% endif %}>Cliente</option>
+                            <option value="superadmin" {% if request.query_params.get('role') == 'superadmin' %}selected{% endif %}>Superadmin</option>
+                            <option value="staff" {% if request.query_params.get('role') == 'staff' %}selected{% endif %}>Staff</option>
+                            <option value="client_user" {% if request.query_params.get('role') == 'client_user' %}selected{% endif %}>Cliente</option>
                         </select>
                     </div>
                     <div class="col-md-3">

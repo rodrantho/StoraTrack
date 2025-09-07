@@ -114,7 +114,7 @@ def get_current_active_user(current_user: User = Depends(get_current_user)):
 def require_role(allowed_roles: list):
     """Decorator para requerir roles específicos"""
     def role_checker(current_user: User = Depends(get_current_active_user)):
-        if current_user.role not in allowed_roles:
+        if current_user.role.value not in allowed_roles:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="No tienes permisos para acceder a este recurso"
@@ -124,7 +124,7 @@ def require_role(allowed_roles: list):
 
 def require_superadmin(current_user: User = Depends(get_current_active_user)):
     """Requerir rol de superadmin"""
-    if current_user.role != UserRole.SUPERADMIN:
+    if current_user.role.value != "superadmin":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Se requieren permisos de superadministrador"
@@ -133,7 +133,7 @@ def require_superadmin(current_user: User = Depends(get_current_active_user)):
 
 def require_admin_or_staff(current_user: User = Depends(get_current_active_user)):
     """Requerir rol de admin o staff"""
-    if current_user.role not in [UserRole.SUPERADMIN, UserRole.STAFF]:
+    if current_user.role.value not in ["superadmin", "staff"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Se requieren permisos de administrador o staff"
@@ -143,7 +143,7 @@ def require_admin_or_staff(current_user: User = Depends(get_current_active_user)
 def require_same_company_or_admin(current_user: User = Depends(get_current_active_user)):
     """Requerir misma empresa o permisos de admin"""
     def company_checker(company_id: int):
-        if current_user.role in [UserRole.SUPERADMIN, UserRole.STAFF]:
+        if current_user.role.value in ["superadmin", "staff"]:
             return current_user
         if current_user.company_id != company_id:
             raise HTTPException(
@@ -166,11 +166,11 @@ def get_user_permissions(user: User) -> dict:
         "can_view_audit_logs": False,
     }
     
-    if user.role == UserRole.SUPERADMIN:
+    if user.role.value == "superadmin":
         # Superadmin puede hacer todo
         for key in permissions:
             permissions[key] = True
-    elif user.role == UserRole.STAFF:
+    elif user.role.value == "staff":
         # Staff puede gestionar empresas, usuarios, dispositivos y generar reportes
         permissions.update({
             "can_manage_companies": True,
@@ -181,7 +181,7 @@ def get_user_permissions(user: User) -> dict:
             "can_close_months": True,
             "can_view_audit_logs": True,
         })
-    elif user.role == UserRole.CLIENT_USER:
+    elif user.role.value == "client_user":
         # Cliente solo puede ver sus propios dispositivos y reportes
         permissions.update({
             "can_manage_own_devices": True,
@@ -192,7 +192,7 @@ def get_user_permissions(user: User) -> dict:
 
 def check_company_access(user: User, company_id: int) -> bool:
     """Verificar si el usuario tiene acceso a una empresa específica"""
-    if user.role in [UserRole.SUPERADMIN, UserRole.STAFF]:
+    if user.role.value in ["superadmin", "staff"]:
         return True
     return user.company_id == company_id
 
@@ -200,9 +200,9 @@ def get_accessible_companies(user: User, db: Session) -> list:
     """Obtener empresas accesibles para el usuario"""
     from app.models import Company
     
-    if user.role in [UserRole.SUPERADMIN, UserRole.STAFF]:
+    if user.role.value in ["superadmin", "staff"]:
         return db.query(Company).filter(Company.is_active == True).all()
-    elif user.role == UserRole.CLIENT_USER and user.company_id:
+    elif user.role.value == "client_user" and user.company_id:
         return db.query(Company).filter(
             Company.id == user.company_id,
             Company.is_active == True

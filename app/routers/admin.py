@@ -20,12 +20,124 @@ from app.auth import (
 )
 from app.config import settings
 from app.utils.datetime_utils import now_local
+from app.utils.pagination import paginate_query, get_pagination_params, create_pagination_context
+# from app.utils.cache import cached, invalidate_cache_pattern
 from datetime import datetime
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
 
 # Función auxiliar para calcular costos de dispositivos
+# @cached(expire=300, key_prefix="dashboard_stats")
+def get_dashboard_stats(db: Session) -> dict:
+    """Obtener estadísticas del dashboard con caché"""
+    # Estadísticas de dispositivos
+    total_devices = db.query(Device).filter(Device.is_active == True).count()
+    stored_devices = db.query(Device).filter(
+        Device.is_active == True,
+        Device.status == DeviceStatus.ALMACENADO
+    ).count()
+    in_process_devices = db.query(Device).filter(
+        Device.is_active == True,
+        Device.status.in_([DeviceStatus.INGRESADO, DeviceStatus.ESPERANDO_RECIBIR])
+    ).count()
+    
+    # Estadísticas por estado
+    devices_by_status = {
+        "INGRESADO": db.query(Device).filter(
+            Device.is_active == True,
+            Device.status == DeviceStatus.INGRESADO
+        ).count(),
+        "ESPERANDO_RECIBIR": db.query(Device).filter(
+            Device.is_active == True,
+            Device.status == DeviceStatus.ESPERANDO_RECIBIR
+        ).count(),
+        "ALMACENADO": stored_devices,
+        "ENVIADO": db.query(Device).filter(
+            Device.is_active == True,
+            Device.status == DeviceStatus.ENVIADO
+        ).count(),
+        "RETIRADO": db.query(Device).filter(
+            Device.is_active == True,
+            Device.status == DeviceStatus.RETIRADO
+        ).count()
+    }
+    
+    # Estadísticas de empresas
+    total_companies = db.query(Company).filter(Company.is_active == True).count()
+    
+    # Estadísticas de usuarios
+    total_users = db.query(User).filter(User.is_active == True).count()
+    
+    # Estadísticas de ubicaciones
+    total_locations = db.query(Location).filter(Location.is_active == True).count()
+    
+    # Empresas recientes
+    recent_companies = db.query(Company).filter(
+        Company.is_active == True
+    ).order_by(Company.created_at.desc()).limit(5).all()
+    
+    # Usuarios recientes
+    recent_users = db.query(User).filter(
+        User.is_active == True
+    ).order_by(User.created_at.desc()).limit(5).all()
+    
+    # Ubicaciones recientes
+    recent_locations = db.query(Location).filter(
+        Location.is_active == True
+    ).order_by(Location.created_at.desc()).limit(5).all()
+    
+    # Estadísticas de ubicaciones detalladas
+    # Ubicaciones con dispositivos (ocupadas)
+    occupied_locations = db.query(Location).filter(
+        Location.is_active == True,
+        Location.devices.any(Device.is_active == True)
+    ).count()
+    
+    # Ubicaciones sin dispositivos (vacías)
+    empty_locations = total_locations - occupied_locations
+    
+    # Para ubicaciones sobre capacidad, necesitamos una consulta más compleja
+    # Por ahora, simulamos el valor
+    over_capacity_locations = 0
+    
+    # Calcular ingresos mensuales (simulado por ahora)
+    monthly_revenue = total_devices * 50.0  # Valor base por dispositivo
+    
+    return {
+        "devices": {
+            "total": total_devices,
+            "stored": stored_devices,
+            "in_process": in_process_devices
+        },
+        "devices_by_status": devices_by_status,
+        "companies": {"total": total_companies},
+        "users": {"total": total_users},
+        "locations": {"total": total_locations},
+        "recent_companies": recent_companies,
+        "recent_users": recent_users,
+        "recent_locations": recent_locations,
+        # Campos adicionales para compatibilidad con templates
+        "total_companies": total_companies,
+        "total_users": total_users,
+        "total_devices": total_devices,
+        "total_locations": total_locations,
+        "occupied_locations": occupied_locations,
+        "empty_locations": empty_locations,
+        "over_capacity_locations": over_capacity_locations,
+        "monthly_revenue": monthly_revenue
+    }
+
+# @cached(expire=600, key_prefix="companies_list")
+def get_companies_for_filters(db: Session) -> list:
+    """Obtener lista de empresas para filtros con caché"""
+    return db.query(Company).filter(Company.is_active == True).all()
+
+# @cached(expire=600, key_prefix="locations_list")
+def get_locations_for_filters(db: Session) -> list:
+    """Obtener lista de ubicaciones para filtros con caché"""
+    return db.query(Location).filter(Location.is_active == True).all()
+
 def calculate_device_cost(device: Device, fecha_hasta: datetime = None) -> float:
     """Calcular costo de un dispositivo hasta una fecha"""
     try:
@@ -64,103 +176,21 @@ async def admin_dashboard(
     current_user: User = Depends(require_admin_or_staff)
 ):
     """Dashboard de administración"""
-    # Estadísticas generales
-    total_companies = db.query(Company).filter(Company.is_active == True).count()
-    total_devices = db.query(Device).filter(Device.is_active == True).count()
-    total_users = db.query(User).filter(User.is_active == True).count()
+    # Obtener estadísticas cacheadas
+    stats = get_dashboard_stats(db)
     
-    # Dispositivos por estado
-    from app.models import DeviceStatus
-    devices_by_status = {}
-    for status in DeviceStatus:
-        count = db.query(Device).filter(
-            Device.status == status,
-            Device.is_active == True
-        ).count()
-        devices_by_status[status.value] = count
-    
-    # Empresas recientes
-    recent_companies = db.query(Company).filter(
-        Company.is_active == True
-    ).order_by(Company.created_at.desc()).limit(5).all()
-    
-    # Usuarios recientes
-    recent_users = db.query(User).filter(
-        User.is_active == True
-    ).order_by(User.created_at.desc()).limit(5).all()
-    
-    # Estadísticas de ubicaciones
-    from app.models import Location
-    total_locations = db.query(Location).filter(Location.is_active == True).count()
-    
-    # Ubicaciones con equipos
-    locations_with_devices = db.query(Location).join(Device).filter(
-        Location.is_active == True,
-        Device.is_active == True
-    ).distinct().count()
-    
-    # Ubicaciones vacías
-    empty_locations = total_locations - locations_with_devices
-    
-    # Ubicaciones sobre capacidad (donde hay más equipos que la capacidad máxima)
-    over_capacity_locations = db.query(Location).filter(
-        Location.is_active == True,
-        Location.max_capacity.isnot(None),
-        Location.max_capacity > 0
-    ).all()
-    
-    over_capacity_count = 0
-    for location in over_capacity_locations:
-        device_count = db.query(Device).filter(
-            Device.location_id == location.id,
-            Device.is_active == True
-        ).count()
-        if device_count > location.max_capacity:
-            over_capacity_count += 1
-    
-    # Ubicaciones recientes
-    recent_locations = db.query(Location).filter(
-        Location.is_active == True
-    ).order_by(Location.created_at.desc()).limit(5).all()
-    
-    # Agregar información de empresas y dispositivos a las ubicaciones recientes
-    for location in recent_locations:
-        # Contar dispositivos en esta ubicación
-        location.device_count = db.query(Device).filter(
-            Device.location_id == location.id,
-            Device.is_active == True
-        ).count()
-        
-        # Calcular porcentaje de capacidad
-        if location.max_capacity and location.max_capacity > 0:
-            location.capacity_percentage = min(100, (location.device_count / location.max_capacity) * 100)
-        else:
-            location.capacity_percentage = 0
-    
-    # Obtener todas las ubicaciones y empresas para los modales
-    locations = db.query(Location).filter(Location.is_active == True).all()
-    companies = db.query(Company).filter(Company.is_active == True).all()
-
-    # Crear objeto stats para el template
-    stats = {
-        "total_companies": total_companies,
-        "total_devices": total_devices,
-        "total_users": total_users,
-        "monthly_revenue": 0.0,  # Placeholder para ingresos mensuales
-        "total_locations": total_locations,
-        "locations_with_devices": locations_with_devices,
-        "empty_locations": empty_locations,
-        "over_capacity_locations": over_capacity_count
-    }
+    # Obtener listas cacheadas para filtros
+    companies = get_companies_for_filters(db)
+    locations = get_locations_for_filters(db)
 
     return templates.TemplateResponse("admin/dashboard.html", {
         "request": request,
         "current_user": current_user,
         "stats": stats,
-        "devices_by_status": devices_by_status,
-        "recent_companies": recent_companies,
-        "recent_users": recent_users,
-        "recent_locations": recent_locations,
+        "devices_by_status": stats["devices_by_status"],
+        "recent_companies": stats["recent_companies"],
+        "recent_users": stats["recent_users"],
+        "recent_locations": stats["recent_locations"],
         "locations": locations,
         "companies": companies
     })
@@ -174,23 +204,19 @@ async def list_companies(
     current_user: User = Depends(require_admin_or_staff)
 ):
     """Listar empresas"""
-    page_size = settings.default_page_size
-    offset = (page - 1) * page_size
+    query = db.query(Company).filter(Company.is_active == True)
     
-    companies = db.query(Company).filter(
-        Company.is_active == True
-    ).offset(offset).limit(page_size).all()
-    
-    total = db.query(Company).filter(Company.is_active == True).count()
-    pages = (total + page_size - 1) // page_size
+    # Paginación mejorada
+    page, per_page = get_pagination_params(request)
+    pagination_result = paginate_query(query, page, per_page)
+    companies = pagination_result.items
+    pagination = create_pagination_context(pagination_result, request)
     
     return templates.TemplateResponse("admin/companies.html", {
         "request": request,
         "current_user": current_user,
         "companies": companies,
-        "page": page,
-        "pages": pages,
-        "total": total
+        "pagination": pagination
     })
 
 @router.get("/companies/new", response_class=HTMLResponse, name="admin_company_new")
@@ -246,6 +272,10 @@ async def create_company(
     db.add(company)
     db.commit()
     db.refresh(company)
+    
+    # Invalidar caché
+    invalidate_cache_pattern("dashboard_stats*")
+    invalidate_cache_pattern("companies_list*")
     
     return RedirectResponse(url="/admin/companies", status_code=302)
 
@@ -452,17 +482,16 @@ async def list_users(
     current_user: User = Depends(require_admin_or_staff)
 ):
     """Listar usuarios"""
-    page_size = settings.default_page_size
-    offset = (page - 1) * page_size
-    
     query = db.query(User).filter(User.is_active == True)
     
     if company_id:
         query = query.filter(User.company_id == company_id)
     
-    users = query.offset(offset).limit(page_size).all()
-    total = query.count()
-    pages = (total + page_size - 1) // page_size
+    # Paginación mejorada
+    page, per_page = get_pagination_params(request)
+    pagination_result = paginate_query(query, page, per_page)
+    users = pagination_result.items
+    pagination = create_pagination_context(pagination_result, request)
     
     # Obtener empresas para filtro
     companies = db.query(Company).filter(Company.is_active == True).all()
@@ -473,9 +502,7 @@ async def list_users(
         "users": users,
         "companies": companies,
         "selected_company_id": company_id,
-        "page": page,
-        "pages": pages,
-        "total": total,
+        "pagination": pagination,
         "error": error
     })
 
@@ -506,7 +533,7 @@ async def create_user(
         raise HTTPException(status_code=400, detail="Rol inválido")
     
     # Solo superadmin puede crear otros superadmin
-    if user_role == UserRole.SUPERADMIN and current_user.role != UserRole.SUPERADMIN:
+    if user_role.value == "superadmin" and current_user.role.value != "superadmin":
         raise HTTPException(status_code=403, detail="No tienes permisos para crear superadministradores")
 
     # Convertir company_id a int si no está vacío
@@ -518,7 +545,7 @@ async def create_user(
             raise HTTPException(status_code=400, detail="ID de empresa inválido")
     
     # Validar que CLIENT_USER tenga empresa asignada
-    if user_role == UserRole.CLIENT_USER and not final_company_id:
+    if user_role.value == "client_user" and not final_company_id:
         return RedirectResponse(url="/admin/users?error=Los+usuarios+cliente+deben+tener+una+empresa+asignada", status_code=302)
 
     user = User(
@@ -526,7 +553,7 @@ async def create_user(
         hashed_password=get_password_hash(password),
         full_name=full_name,
         role=user_role,
-        company_id=final_company_id if user_role != UserRole.SUPERADMIN else None
+        company_id=final_company_id if user_role.value != "superadmin" else None
     )
     
     db.add(user)
@@ -636,7 +663,7 @@ async def update_user(
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
     
     # Si el usuario actual es staff, no puede cambiar roles a super admin
-    if current_user.role == UserRole.STAFF and role == "superadmin":
+    if current_user.role.value == "staff" and role == "superadmin":
         companies = db.query(Company).filter(Company.is_active == True).all()
         return templates.TemplateResponse("admin/user_edit.html", {
             "request": request,
@@ -696,7 +723,7 @@ async def delete_user(
         raise HTTPException(status_code=400, detail="No puede eliminar su propio usuario")
     
     # Staff no puede eliminar otros staff o superadmin
-    if current_user.role == UserRole.STAFF and user.role in [UserRole.STAFF, UserRole.SUPERADMIN]:
+    if current_user.role.value == "staff" and user.role.value in ["staff", "superadmin"]:
         raise HTTPException(status_code=403, detail="No tienes permisos para eliminar usuarios staff o superadmin")
     
     user.is_active = False
@@ -798,24 +825,11 @@ async def devices_page(
     else:  # created_at
         query = query.order_by(Device.created_at.desc())
     
-    # Paginación
-    per_page = 20
-    total_devices = query.count()
-    total_pages = (total_devices + per_page - 1) // per_page
-    offset = (page - 1) * per_page
-    devices = query.offset(offset).limit(per_page).all()
-    
-    # Crear objeto de paginación
-    pagination = {
-        "page": page,
-        "pages": total_pages,
-        "per_page": per_page,
-        "total": total_devices,
-        "has_prev": page > 1,
-        "has_next": page < total_pages,
-        "prev_num": page - 1 if page > 1 else None,
-        "next_num": page + 1 if page < total_pages else None
-    }
+    # Paginación mejorada
+    page, per_page = get_pagination_params(request)
+    pagination_result = paginate_query(query, page, per_page)
+    devices = pagination_result.items
+    pagination = create_pagination_context(pagination_result, request)
     
     # Obtener empresas y ubicaciones para los filtros y modales
     companies = db.query(Company).filter(Company.is_active == True).all()
@@ -971,6 +985,7 @@ async def delete_device(
 @router.get("/locations", response_class=HTMLResponse, name="admin_locations")
 async def locations_page(
     request: Request,
+    page: int = 1,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_admin_or_staff)
 ):
@@ -986,10 +1001,16 @@ async def locations_page(
     # Obtener empresas para el selector
     companies = db.query(Company).filter(Company.is_active == True).all()
     
-    # Obtener ubicaciones con jerarquía
-    locations = db.query(Location).filter(
+    # Obtener ubicaciones con jerarquía y paginación
+    query = db.query(Location).filter(
         Location.is_active == True
-    ).order_by(Location.parent_id.asc(), Location.sort_order.asc(), Location.name.asc()).all()
+    ).order_by(Location.parent_id.asc(), Location.sort_order.asc(), Location.name.asc())
+    
+    # Paginación mejorada
+    page, per_page = get_pagination_params(request)
+    pagination_result = paginate_query(query, page, per_page)
+    locations = pagination_result.items
+    pagination = create_pagination_context(pagination_result, request)
     
     summary = {
         "total": total_locations,
@@ -1005,7 +1026,8 @@ async def locations_page(
             "current_user": current_user,
             "companies": companies,
             "locations": locations,
-            "summary": summary
+            "summary": summary,
+            "pagination": pagination
         }
     )
 
@@ -1057,7 +1079,7 @@ async def change_user_role(
             raise HTTPException(status_code=400, detail="Rol inválido")
         
         # Si el usuario actual es staff, no puede crear super admins
-        if current_user.role == UserRole.STAFF and new_role == "superadmin":
+        if current_user.role.value == "staff" and new_role == "superadmin":
             raise HTTPException(status_code=403, detail="Los usuarios staff no pueden crear super admins")
         
         # Buscar el usuario
@@ -1542,7 +1564,7 @@ async def delete_user(
             raise HTTPException(status_code=400, detail="No puedes eliminar tu propia cuenta")
         
         # Si el usuario actual es staff, no puede eliminar otros staff o super admins
-        if current_user.role == UserRole.STAFF and user.role in [UserRole.STAFF, UserRole.SUPERADMIN]:
+        if current_user.role.value == "staff" and user.role.value in ["staff", "superadmin"]:
             raise HTTPException(status_code=403, detail="Los usuarios staff no pueden eliminar otros staff o super admins")
         
         # Eliminar el usuario (soft delete)
@@ -1621,9 +1643,8 @@ async def help_superadmin(
     current_user: User = Depends(require_superadmin)
 ):
     """Página de ayuda para Superadmin"""
-    # Breadcrumbs
     breadcrumbs = [
-        {"title": "Dashboard", "url": "/admin/dashboard"},
+        {"title": "Dashboard", "url": "/admin"},
         {"title": "Guía de Superadmin", "url": ""}
     ]
     
@@ -1641,7 +1662,7 @@ async def help_staff(
 ):
     """Página de ayuda para Staff"""
     # Verificar que el usuario sea staff (no superadmin)
-    if current_user.role != UserRole.STAFF:
+    if current_user.role.value != "staff":
         raise HTTPException(status_code=403, detail="Acceso denegado")
     
     # Breadcrumbs

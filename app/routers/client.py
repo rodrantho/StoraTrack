@@ -22,7 +22,7 @@ async def client_dashboard(
 ):
     """Dashboard del cliente"""
     # Verificar que el usuario sea un cliente
-    if current_user.role != UserRole.CLIENT_USER:
+    if current_user.role.value != "client_user":
         raise HTTPException(status_code=403, detail="Acceso denegado")
     
     # Verificar que el usuario tenga una empresa asignada
@@ -106,7 +106,7 @@ async def list_devices(
     current_user: User = Depends(get_current_active_user)
 ):
     """Listar dispositivos del cliente"""
-    if current_user.role != UserRole.CLIENT_USER:
+    if current_user.role.value != "client_user":
         raise HTTPException(status_code=403, detail="Acceso denegado")
     
     if not current_user.company_id:
@@ -190,7 +190,7 @@ async def view_device(
     current_user: User = Depends(get_current_active_user)
 ):
     """Ver detalle de dispositivo"""
-    if current_user.role != UserRole.CLIENT_USER:
+    if current_user.role.value != "client_user":
         raise HTTPException(status_code=403, detail="Acceso denegado")
     
     device = db.query(Device).filter(
@@ -225,7 +225,7 @@ async def device_qr_code(
     current_user: User = Depends(get_current_active_user)
 ):
     """Generar código QR del dispositivo"""
-    if current_user.role != UserRole.CLIENT_USER:
+    if current_user.role.value != "client_user":
         raise HTTPException(status_code=403, detail="Acceso denegado")
     
     device = db.query(Device).filter(
@@ -266,7 +266,7 @@ async def reports_page(
     current_user: User = Depends(get_current_active_user)
 ):
     """Página de reportes"""
-    if current_user.role != UserRole.CLIENT_USER:
+    if current_user.role.value != "client_user":
         raise HTTPException(status_code=403, detail="Acceso denegado")
     
     if not current_user.company_id:
@@ -344,7 +344,7 @@ async def download_current_report(
     current_user: User = Depends(get_current_active_user)
 ):
     """Descargar reporte actual"""
-    if current_user.role != UserRole.CLIENT_USER:
+    if current_user.role.value != "client_user":
         raise HTTPException(status_code=403, detail="Acceso denegado")
     
     if not current_user.company_id:
@@ -375,7 +375,7 @@ async def download_current_report_format(
     current_user: User = Depends(get_current_active_user)
 ):
     """Descargar reporte actual"""
-    if current_user.role != UserRole.CLIENT_USER:
+    if current_user.role.value != "client_user":
         raise HTTPException(status_code=403, detail="Acceso denegado")
     
     if not current_user.company_id:
@@ -405,7 +405,7 @@ async def get_current_cost(
     current_user: User = Depends(get_current_active_user)
 ):
     """Obtener costo actual de la empresa"""
-    if current_user.role != UserRole.CLIENT_USER:
+    if current_user.role.value != "client_user":
         raise HTTPException(status_code=403, detail="Acceso denegado")
     
     if not current_user.company_id:
@@ -425,7 +425,7 @@ async def download_report(
     current_user: User = Depends(get_current_active_user)
 ):
     """Descargar reporte específico"""
-    if current_user.role != UserRole.CLIENT_USER:
+    if current_user.role.value != "client_user":
         raise HTTPException(status_code=403, detail="Acceso denegado")
     
     if not current_user.company_id:
@@ -633,7 +633,7 @@ async def help_client(
 ):
     """Página de ayuda para Cliente"""
     # Verificar que el usuario sea un cliente
-    if current_user.role != UserRole.CLIENT_USER:
+    if current_user.role.value != "client_user":
         raise HTTPException(status_code=403, detail="Acceso denegado")
     
     # Breadcrumbs
