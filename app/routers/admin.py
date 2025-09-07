@@ -1592,3 +1592,22 @@ async def toggle_user_status(
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
+
+# Configuración del sistema
+@router.get("/settings", response_class=HTMLResponse, name="admin_settings")
+async def settings_page(
+    request: Request,
+    current_user: User = Depends(require_admin_or_staff)
+):
+    """Página de configuración del sistema"""
+    # Breadcrumbs
+    breadcrumbs = [
+        {"title": "Dashboard", "url": "/admin/dashboard"},
+        {"title": "Configuración", "url": ""}
+    ]
+    
+    return templates.TemplateResponse("admin/settings.html", {
+        "request": request,
+        "current_user": current_user,
+        "breadcrumbs": breadcrumbs
+    })

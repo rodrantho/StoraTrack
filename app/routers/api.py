@@ -374,24 +374,37 @@ async def update_device(
 # Locations API
 @router.get("/locations", response_model=List[LocationSchema], tags=["Locations"])
 async def get_locations(
-    company_id: int,
+    company_id: Optional[int] = Query(None),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
 ):
-    """Obtener ubicaciones de una empresa"""
-    # Verificar acceso a la empresa
-    if not check_company_access(current_user, company_id):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="No tienes acceso a esta empresa"
-        )
+    """Obtener ubicaciones de una empresa o todas las ubicaciones para admin/staff"""
+    # Si es admin o staff y no se especifica company_id, devolver todas las ubicaciones
+    if current_user.role.value in ["superadmin", "staff"] and company_id is None:
+        locations = db.query(Location).filter(
+            Location.is_active == True
+        ).all()
+        return locations
     
-    locations = db.query(Location).filter(
-        Location.company_id == company_id,
-        Location.is_active == True
-    ).all()
+    # Si se especifica company_id, verificar acceso
+    if company_id:
+        if not check_company_access(current_user, company_id):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="No tienes acceso a esta empresa"
+            )
+        
+        locations = db.query(Location).filter(
+            Location.company_id == company_id,
+            Location.is_active == True
+        ).all()
+        return locations
     
-    return locations
+    # Para usuarios cliente sin company_id especificado, devolver error
+    raise HTTPException(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        detail="Debe especificar company_id"
+    )
 
 @router.post("/locations", response_model=LocationSchema, tags=["Locations"])
 async def create_location(

@@ -333,13 +333,16 @@ document.addEventListener('DOMContentLoaded', function() {
     // Funciones
     async function loadDevices() {
         try {
-            const response = await fetch('/api/devices');
+            const response = await fetch('/api/devices', {
+                credentials: 'include'
+            });
             const data = await response.json();
             
             const select = document.getElementById('deviceSelect');
             select.innerHTML = '<option value="">Seleccione un dispositivo...</option>';
             
-            data.devices.forEach(device => {
+            // La API devuelve directamente un array, no un objeto con propiedad devices
+            data.forEach(device => {
                 const option = document.createElement('option');
                 option.value = device.id;
                 option.textContent = `${device.name} (${device.serial_number || 'Sin S/N'})`;
@@ -352,8 +355,15 @@ document.addEventListener('DOMContentLoaded', function() {
     
     async function loadLocations() {
         try {
-            const response = await fetch('/api/locations');
+            const response = await fetch('/api/locations', {
+                credentials: 'include'
+            });
             const data = await response.json();
+            
+            console.log('Locations API response:', data);
+            console.log('Type of data:', typeof data);
+            console.log('Is array:', Array.isArray(data));
+            console.log('Data keys:', Object.keys(data));
             
             const select = document.getElementById('locationSelect');
             select.innerHTML = '<option value="">Seleccione una ubicación...</option>';
@@ -361,17 +371,33 @@ document.addEventListener('DOMContentLoaded', function() {
             const batchSelect = document.getElementById('batchLocation');
             batchSelect.innerHTML = '<option value="">Todas las ubicaciones</option>';
             
-            data.locations.forEach(location => {
+            // Si la respuesta tiene un campo 'detail' con error
+            if (data.detail && !Array.isArray(data)) {
+                console.error('Error en la API de ubicaciones:', JSON.stringify(data.detail, null, 2));
+                if (Array.isArray(data.detail)) {
+                    data.detail.forEach(error => {
+                        console.error('Detalle del error:', error);
+                    });
+                }
+                return;
+            }
+            
+            // Verificar si data es un array
+            if (Array.isArray(data)) {
+                data.forEach(location => {
                 const option1 = document.createElement('option');
                 option1.value = location.id;
                 option1.textContent = location.name;
                 select.appendChild(option1);
                 
-                const option2 = document.createElement('option');
-                option2.value = location.id;
-                option2.textContent = location.name;
-                batchSelect.appendChild(option2);
-            });
+                    const option2 = document.createElement('option');
+                    option2.value = location.id;
+                    option2.textContent = location.name;
+                    batchSelect.appendChild(option2);
+                });
+            } else {
+                console.error('La respuesta de ubicaciones no es un array:', data);
+            }
         } catch (error) {
             console.error('Error cargando ubicaciones:', error);
         }
@@ -379,13 +405,16 @@ document.addEventListener('DOMContentLoaded', function() {
     
     async function loadCompanies() {
         try {
-            const response = await fetch('/api/companies');
+            const response = await fetch('/api/companies', {
+                credentials: 'include'
+            });
             const data = await response.json();
             
             const select = document.getElementById('batchCompany');
             select.innerHTML = '<option value="">Todas las empresas</option>';
             
-            data.companies.forEach(company => {
+            // La API devuelve directamente un array
+            data.forEach(company => {
                 const option = document.createElement('option');
                 option.value = company.id;
                 option.textContent = company.name;
@@ -409,7 +438,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 url = `/api/labels/device/${deviceId}/label`;
             }
             
-            const response = await fetch(url);
+            const response = await fetch(url, {
+                credentials: 'include'
+            });
             const data = await response.json();
             
             if (response.ok) {
@@ -447,7 +478,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 url = `/api/labels/location/${locationId}/label`;
             }
             
-            const response = await fetch(url);
+            const response = await fetch(url, {
+                credentials: 'include'
+            });
             const data = await response.json();
             
             if (response.ok) {
@@ -485,7 +518,9 @@ document.addEventListener('DOMContentLoaded', function() {
             
             devicesUrl += params.toString();
             
-            const devicesResponse = await fetch(devicesUrl);
+            const devicesResponse = await fetch(devicesUrl, {
+                credentials: 'include'
+            });
             const devicesData = await devicesResponse.json();
             
             if (!devicesResponse.ok) {
@@ -493,7 +528,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
             
-            const deviceIds = devicesData.devices.map(d => d.id).join(',');
+            // La API devuelve directamente un array
+            const deviceIds = devicesData.map(d => d.id).join(',');
             
             if (!deviceIds) {
                 showAlert('No se encontraron dispositivos con los filtros especificados', 'warning');
@@ -504,7 +540,9 @@ document.addEventListener('DOMContentLoaded', function() {
             showProgress('Generando etiquetas en lote...');
             
             const batchUrl = `/api/labels/batch/devices?device_ids=${deviceIds}&label_type=${labelType}`;
-            const batchResponse = await fetch(batchUrl);
+            const batchResponse = await fetch(batchUrl, {
+                credentials: 'include'
+            });
             const batchData = await batchResponse.json();
             
             if (batchResponse.ok) {

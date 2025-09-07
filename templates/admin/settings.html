@@ -1,0 +1,309 @@
+{% extends "base.html" %}
+
+{% block title %}Configuración del Sistema - StoraTrack{% endblock %}
+
+{% block page_title %}Configuración del Sistema{% endblock %}
+
+{% block breadcrumbs %}
+<nav aria-label="breadcrumb" class="pt-3">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item">
+            <a href="/admin/dashboard"><i class="bi bi-house"></i> Dashboard</a>
+        </li>
+        <li class="breadcrumb-item active" aria-current="page">
+            <i class="bi bi-gear"></i> Configuración
+        </li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <!-- Configuración General -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-gear-fill me-2"></i>Configuración General</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="text-muted mb-3">Información del Sistema</h6>
+                        <div class="mb-3">
+                            <label class="form-label">Nombre del Sistema</label>
+                            <input type="text" class="form-control" value="StoraTrack" readonly>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Versión</label>
+                            <input type="text" class="form-control" value="1.0.0" readonly>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Elementos por página</label>
+                            <input type="number" class="form-control" value="20" min="10" max="100">
+                            <div class="form-text">Número de elementos mostrados por página en las listas</div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-muted mb-3">Configuración de Costos</h6>
+                        <div class="mb-3">
+                            <label class="form-label">Costo Base por Defecto</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" class="form-control" value="0.00" step="0.01" min="0">
+                            </div>
+                            <div class="form-text">Costo base aplicado a nuevos dispositivos</div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Costo Diario por Defecto</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" class="form-control" value="0.00" step="0.01" min="0">
+                            </div>
+                            <div class="form-text">Costo diario aplicado a nuevos dispositivos</div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">IVA (%)</label>
+                            <div class="input-group">
+                                <input type="number" class="form-control" value="19" step="0.1" min="0" max="100">
+                                <span class="input-group-text">%</span>
+                            </div>
+                            <div class="form-text">Porcentaje de IVA aplicado a los costos</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <button type="button" class="btn btn-primary me-2">
+                            <i class="bi bi-check-lg me-1"></i>Guardar Cambios
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-clockwise me-1"></i>Restablecer
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Configuración de Seguridad -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-shield-lock-fill me-2"></i>Configuración de Seguridad</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="text-muted mb-3">Sesiones</h6>
+                        <div class="mb-3">
+                            <label class="form-label">Tiempo de expiración de sesión</label>
+                            <select class="form-select">
+                                <option value="30">30 minutos</option>
+                                <option value="60" selected>1 hora</option>
+                                <option value="120">2 horas</option>
+                                <option value="240">4 horas</option>
+                                <option value="480">8 horas</option>
+                            </select>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="forceLogout" checked>
+                            <label class="form-check-label" for="forceLogout">
+                                Cerrar sesión automáticamente por inactividad
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-muted mb-3">Contraseñas</h6>
+                        <div class="mb-3">
+                            <label class="form-label">Longitud mínima de contraseña</label>
+                            <input type="number" class="form-control" value="8" min="6" max="20">
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="requireUppercase" checked>
+                            <label class="form-check-label" for="requireUppercase">
+                                Requerir mayúsculas
+                            </label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="requireNumbers" checked>
+                            <label class="form-check-label" for="requireNumbers">
+                                Requerir números
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="requireSpecial">
+                            <label class="form-check-label" for="requireSpecial">
+                                Requerir caracteres especiales
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <button type="button" class="btn btn-primary me-2">
+                            <i class="bi bi-check-lg me-1"></i>Guardar Configuración
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Configuración de Notificaciones -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-bell-fill me-2"></i>Configuración de Notificaciones</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="text-muted mb-3">Notificaciones del Sistema</h6>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="notifyNewDevices" checked>
+                            <label class="form-check-label" for="notifyNewDevices">
+                                Nuevos dispositivos registrados
+                            </label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="notifyMovements" checked>
+                            <label class="form-check-label" for="notifyMovements">
+                                Movimientos de dispositivos
+                            </label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="notifyNewUsers">
+                            <label class="form-check-label" for="notifyNewUsers">
+                                Nuevos usuarios registrados
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-muted mb-3">Configuración de Email</h6>
+                        <div class="mb-3">
+                            <label class="form-label">Servidor SMTP</label>
+                            <input type="text" class="form-control" placeholder="smtp.gmail.com">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Puerto</label>
+                            <input type="number" class="form-control" value="587">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Email del sistema</label>
+                            <input type="email" class="form-control" placeholder="noreply@storatrack.com">
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="enableSSL" checked>
+                            <label class="form-check-label" for="enableSSL">
+                                Usar SSL/TLS
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <button type="button" class="btn btn-primary me-2">
+                            <i class="bi bi-check-lg me-1"></i>Guardar Configuración
+                        </button>
+                        <button type="button" class="btn btn-outline-info me-2">
+                            <i class="bi bi-envelope me-1"></i>Enviar Email de Prueba
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Información del Sistema -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-info-circle-fill me-2"></i>Información del Sistema</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="text-muted mb-3">Estadísticas</h6>
+                        <div class="mb-2">
+                            <strong>Total de Empresas:</strong> <span class="badge bg-primary">{{ stats.total_companies if stats else 0 }}</span>
+                        </div>
+                        <div class="mb-2">
+                            <strong>Total de Usuarios:</strong> <span class="badge bg-success">{{ stats.total_users if stats else 0 }}</span>
+                        </div>
+                        <div class="mb-2">
+                            <strong>Total de Dispositivos:</strong> <span class="badge bg-info">{{ stats.total_devices if stats else 0 }}</span>
+                        </div>
+                        <div class="mb-2">
+                            <strong>Ingresos Mensuales:</strong> <span class="badge bg-warning">${{ "%.2f"|format(stats.monthly_revenue if stats else 0) }}</span>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-muted mb-3">Mantenimiento</h6>
+                        <div class="d-grid gap-2">
+                            <button type="button" class="btn btn-outline-warning">
+                                <i class="bi bi-arrow-clockwise me-1"></i>Limpiar Caché del Sistema
+                            </button>
+                            <button type="button" class="btn btn-outline-info">
+                                <i class="bi bi-download me-1"></i>Exportar Configuración
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary">
+                                <i class="bi bi-upload me-1"></i>Importar Configuración
+                            </button>
+                            <button type="button" class="btn btn-outline-danger">
+                                <i class="bi bi-database me-1"></i>Respaldar Base de Datos
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Confirmación -->
+<div class="modal fade" id="confirmModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirmar Acción</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Está seguro de que desea realizar esta acción?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary">Confirmar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Funcionalidad básica para los botones
+document.addEventListener('DOMContentLoaded', function() {
+    // Botones de mantenimiento que requieren confirmación
+    const dangerButtons = document.querySelectorAll('.btn-outline-danger, .btn-outline-warning');
+    dangerButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const modal = new bootstrap.Modal(document.getElementById('confirmModal'));
+            modal.show();
+        });
+    });
+    
+    // Simular guardado de configuración
+    const saveButtons = document.querySelectorAll('.btn-primary');
+    saveButtons.forEach(button => {
+        if (button.textContent.includes('Guardar')) {
+            button.addEventListener('click', function() {
+                // Simular guardado
+                const originalText = button.innerHTML;
+                button.innerHTML = '<i class="bi bi-check-lg me-1"></i>Guardado';
+                button.classList.add('btn-success');
+                button.classList.remove('btn-primary');
+                
+                setTimeout(() => {
+                    button.innerHTML = originalText;
+                    button.classList.remove('btn-success');
+                    button.classList.add('btn-primary');
+                }, 2000);
+            });
+        }
+    });
+});
+</script>
+{% endblock %}
