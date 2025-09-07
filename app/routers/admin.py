@@ -1611,3 +1611,47 @@ async def settings_page(
         "current_user": current_user,
         "breadcrumbs": breadcrumbs
     })
+
+
+# ==================== HELP ROUTES ====================
+
+@router.get("/help/superadmin", response_class=HTMLResponse)
+async def help_superadmin(
+    request: Request,
+    current_user: User = Depends(require_superadmin)
+):
+    """Página de ayuda para Superadmin"""
+    # Breadcrumbs
+    breadcrumbs = [
+        {"title": "Dashboard", "url": "/admin/dashboard"},
+        {"title": "Guía de Superadmin", "url": ""}
+    ]
+    
+    return templates.TemplateResponse("admin/help_superadmin.html", {
+        "request": request,
+        "current_user": current_user,
+        "breadcrumbs": breadcrumbs
+    })
+
+
+@router.get("/help/staff", response_class=HTMLResponse)
+async def help_staff(
+    request: Request,
+    current_user: User = Depends(require_admin_or_staff)
+):
+    """Página de ayuda para Staff"""
+    # Verificar que el usuario sea staff (no superadmin)
+    if current_user.role != UserRole.STAFF:
+        raise HTTPException(status_code=403, detail="Acceso denegado")
+    
+    # Breadcrumbs
+    breadcrumbs = [
+        {"title": "Dashboard", "url": "/admin/dashboard"},
+        {"title": "Guía de Staff", "url": ""}
+    ]
+    
+    return templates.TemplateResponse("admin/help_staff.html", {
+        "request": request,
+        "current_user": current_user,
+        "breadcrumbs": breadcrumbs
+    })

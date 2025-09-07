@@ -141,6 +141,26 @@
                 
                 <ul class="navbar-nav">
                     {% if current_user %}
+                        <!-- Help Link -->
+                        <li class="nav-item">
+                            {% if current_user.role.value == 'superadmin' %}
+                                <a class="nav-link" href="/admin/help/superadmin" title="Ayuda">
+                                    <i class="bi bi-question-circle me-1"></i>
+                                    Ayuda
+                                </a>
+                            {% elif current_user.role.value == 'staff' %}
+                                <a class="nav-link" href="/admin/help/staff" title="Ayuda">
+                                    <i class="bi bi-question-circle me-1"></i>
+                                    Ayuda
+                                </a>
+                            {% elif current_user.role.value == 'client_user' %}
+                                <a class="nav-link" href="/client/help" title="Ayuda">
+                                    <i class="bi bi-question-circle me-1"></i>
+                                    Ayuda
+                                </a>
+                            {% endif %}
+                        </li>
+                        
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
                                 <i class="bi bi-person-circle me-1"></i>
@@ -158,6 +178,28 @@
                                         Mi Perfil
                                     </a>
                                 </li>
+                                {% if current_user.role.value == 'superadmin' %}
+                                    <li>
+                                        <a class="dropdown-item" href="/admin/help/superadmin">
+                                            <i class="bi bi-question-circle me-2"></i>
+                                            Guía de Superadmin
+                                        </a>
+                                    </li>
+                                {% elif current_user.role.value == 'staff' %}
+                                    <li>
+                                        <a class="dropdown-item" href="/admin/help/staff">
+                                            <i class="bi bi-question-circle me-2"></i>
+                                            Guía de Staff
+                                        </a>
+                                    </li>
+                                {% elif current_user.role.value == 'client_user' %}
+                                    <li>
+                                        <a class="dropdown-item" href="/client/help">
+                                            <i class="bi bi-question-circle me-2"></i>
+                                            Guía de Cliente
+                                        </a>
+                                    </li>
+                                {% endif %}
                                 <li><hr class="dropdown-divider"></li>
                                 <li>
                                     <form method="post" action="/auth/logout" class="d-inline">
@@ -231,6 +273,26 @@
                                     <i class="bi bi-gear me-2"></i>
                                     Configuración
                                 </a>
+                            </li>
+                            
+                            <!-- Help Section -->
+                            <li class="nav-item mt-3">
+                                <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
+                                    <span>Ayuda</span>
+                                </h6>
+                            </li>
+                            <li class="nav-item">
+                                {% if current_user.role.value == 'superadmin' %}
+                                    <a class="nav-link" href="/admin/help/superadmin">
+                                        <i class="bi bi-question-circle me-2"></i>
+                                        Guía de Superadmin
+                                    </a>
+                                {% elif current_user.role.value == 'staff' %}
+                                    <a class="nav-link" href="/admin/help/staff">
+                                        <i class="bi bi-question-circle me-2"></i>
+                                        Guía de Staff
+                                    </a>
+                                {% endif %}
                             </li>
                         </ul>
                     </div>

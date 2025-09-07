@@ -1,0 +1,405 @@
+{% extends "base.html" %}
+
+{% block title %}Guía de Staff - StoraTrack{% endblock %}
+
+{% block extra_css %}
+<style>
+.help-section {
+    background: #f8f9fa;
+    border-left: 4px solid #28a745;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 0 8px 8px 0;
+}
+
+.help-section h4 {
+    color: #28a745;
+    margin-bottom: 15px;
+}
+
+.step-list {
+    counter-reset: step-counter;
+    list-style: none;
+    padding-left: 0;
+}
+
+.step-list li {
+    counter-increment: step-counter;
+    margin-bottom: 10px;
+    padding-left: 40px;
+    position: relative;
+}
+
+.step-list li::before {
+    content: counter(step-counter);
+    position: absolute;
+    left: 0;
+    top: 0;
+    background: #28a745;
+    color: white;
+    width: 25px;
+    height: 25px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.quick-action {
+    background: #e8f5e8;
+    border: 1px solid #28a745;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 15px;
+}
+
+.quick-action h6 {
+    color: #155724;
+    margin-bottom: 10px;
+}
+
+.badge-role {
+    background: #28a745;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 15px;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.permission-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.permission-card {
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 15px;
+}
+
+.permission-card h6 {
+    color: #495057;
+    margin-bottom: 10px;
+}
+
+.permission-list {
+    list-style: none;
+    padding: 0;
+}
+
+.permission-list li {
+    padding: 5px 0;
+    border-bottom: 1px solid #f8f9fa;
+}
+
+.permission-list li:last-child {
+    border-bottom: none;
+}
+
+.permission-list li::before {
+    content: "✓";
+    color: #28a745;
+    font-weight: bold;
+    margin-right: 8px;
+}
+
+.restriction-list li::before {
+    content: "✗";
+    color: #dc3545;
+    font-weight: bold;
+    margin-right: 8px;
+}
+
+.daily-task {
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 15px;
+}
+
+.daily-task h6 {
+    color: #856404;
+    margin-bottom: 10px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2><i class="bi bi-person-gear"></i> Guía de Staff</h2>
+                    <p class="text-muted">Guía completa para usuarios con rol de Staff</p>
+                    <span class="badge-role">STAFF</span>
+                </div>
+                <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline-success">
+                    <i class="bi bi-arrow-left"></i> Volver al Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <!-- Bienvenida -->
+            <div class="help-section">
+                <h4><i class="bi bi-hand-thumbs-up"></i> ¡Bienvenido, Staff!</h4>
+                <p>Como usuario <strong>Staff</strong>, tienes permisos administrativos para gestionar la mayoría de funcionalidades del sistema StoraTrack. Eres responsable de las operaciones diarias y el soporte a los clientes.</p>
+            </div>
+
+            <!-- Responsabilidades Principales -->
+            <div class="help-section">
+                <h4><i class="bi bi-list-check"></i> Tus Responsabilidades</h4>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="daily-task">
+                            <h6><i class="bi bi-building"></i> Gestión de Empresas</h6>
+                            <ul>
+                                <li>Crear nuevas empresas cliente</li>
+                                <li>Actualizar información de empresas</li>
+                                <li>Configurar ubicaciones por empresa</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="daily-task">
+                            <h6><i class="bi bi-people"></i> Gestión de Usuarios</h6>
+                            <ul>
+                                <li>Crear usuarios cliente</li>
+                                <li>Asignar empresas a usuarios</li>
+                                <li>Resolver problemas de acceso</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="daily-task">
+                            <h6><i class="bi bi-phone"></i> Gestión de Dispositivos</h6>
+                            <ul>
+                                <li>Registrar nuevos dispositivos</li>
+                                <li>Actualizar estados de dispositivos</li>
+                                <li>Generar etiquetas QR</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="daily-task">
+                            <h6><i class="bi bi-headset"></i> Soporte al Cliente</h6>
+                            <ul>
+                                <li>Resolver consultas de clientes</li>
+                                <li>Generar reportes solicitados</li>
+                                <li>Capacitar a nuevos usuarios</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Acciones Rápidas -->
+            <div class="help-section">
+                <h4><i class="bi bi-lightning-charge"></i> Acciones Rápidas</h4>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="quick-action">
+                            <h6><i class="bi bi-building-add"></i> Nueva Empresa</h6>
+                            <p>Registra una nueva empresa cliente</p>
+                            <a href="{{ url_for('admin_companies') }}" class="btn btn-sm btn-success">Ir a Empresas</a>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="quick-action">
+                            <h6><i class="bi bi-person-plus-fill"></i> Nuevo Cliente</h6>
+                            <p>Crea un usuario cliente</p>
+                            <a href="{{ url_for('admin_users') }}" class="btn btn-sm btn-success">Ir a Usuarios</a>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="quick-action">
+                            <h6><i class="bi bi-phone-fill"></i> Registrar Dispositivo</h6>
+                            <p>Agrega un nuevo dispositivo al sistema</p>
+                            <a href="{{ url_for('admin_devices') }}" class="btn btn-sm btn-success">Ir a Dispositivos</a>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="quick-action">
+                            <h6><i class="bi bi-qr-code"></i> Generar Etiquetas</h6>
+                            <p>Crea etiquetas QR para dispositivos</p>
+                            <a href="{{ url_for('admin_labels') }}" class="btn btn-sm btn-success">Ir a Etiquetas</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Flujos de Trabajo -->
+            <div class="help-section">
+                <h4><i class="bi bi-diagram-3"></i> Flujos de Trabajo Diarios</h4>
+                
+                <h6>🆕 Onboarding de Nuevo Cliente</h6>
+                <ol class="step-list">
+                    <li>Crear empresa del cliente en "Empresas"</li>
+                    <li>Configurar ubicaciones básicas para la empresa</li>
+                    <li>Crear usuario cliente y asignarlo a la empresa</li>
+                    <li>Enviar credenciales de acceso al cliente</li>
+                    <li>Programar sesión de capacitación</li>
+                </ol>
+
+                <h6 class="mt-4">📱 Registro Masivo de Dispositivos</h6>
+                <ol class="step-list">
+                    <li>Preparar lista de dispositivos con información completa</li>
+                    <li>Registrar dispositivos uno por uno o usar importación</li>
+                    <li>Asignar ubicaciones apropiadas</li>
+                    <li>Generar etiquetas QR en lote</li>
+                    <li>Entregar etiquetas al cliente</li>
+                </ol>
+
+                <h6 class="mt-4">🔧 Soporte Técnico</h6>
+                <ol class="step-list">
+                    <li>Recibir consulta del cliente</li>
+                    <li>Revisar información del dispositivo/usuario</li>
+                    <li>Realizar cambios necesarios en el sistema</li>
+                    <li>Verificar que el problema se resolvió</li>
+                    <li>Documentar la solución para futuros casos</li>
+                </ol>
+            </div>
+
+            <!-- Mejores Prácticas -->
+            <div class="help-section">
+                <h4><i class="bi bi-star"></i> Mejores Prácticas</h4>
+                <div class="alert alert-success">
+                    <h6><i class="bi bi-check-circle"></i> Comunicación con Clientes</h6>
+                    <ul>
+                        <li>Responde consultas en menos de 24 horas</li>
+                        <li>Usa un lenguaje claro y profesional</li>
+                        <li>Proporciona capturas de pantalla cuando sea útil</li>
+                        <li>Confirma que el problema se resolvió</li>
+                    </ul>
+                </div>
+                
+                <div class="alert alert-info">
+                    <h6><i class="bi bi-shield-check"></i> Seguridad de Datos</h6>
+                    <ul>
+                        <li>Verifica la identidad antes de hacer cambios importantes</li>
+                        <li>No compartas credenciales de acceso por medios inseguros</li>
+                        <li>Mantén confidencial la información de los clientes</li>
+                        <li>Reporta cualquier actividad sospechosa</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <!-- Permisos -->
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="bi bi-shield-check"></i> Tus Permisos</h5>
+                </div>
+                <div class="card-body">
+                    <div class="permission-card">
+                        <h6>✅ Puedes hacer:</h6>
+                        <ul class="permission-list">
+                            <li>Crear y editar empresas</li>
+                            <li>Crear usuarios cliente</li>
+                            <li>Crear otros usuarios staff</li>
+                            <li>Gestionar dispositivos</li>
+                            <li>Crear ubicaciones</li>
+                            <li>Generar reportes</li>
+                            <li>Generar etiquetas QR</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="permission-card mt-3">
+                        <h6>❌ Restricciones:</h6>
+                        <ul class="restriction-list">
+                            <li>No puedes crear superadmins</li>
+                            <li>No puedes eliminar otros staff</li>
+                            <li>No puedes cambiar configuración global</li>
+                            <li>No puedes acceder a auditoría completa</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Atajos de Teclado -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5><i class="bi bi-keyboard"></i> Atajos Útiles</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-6"><kbd>Ctrl + N</kbd></div>
+                        <div class="col-6">Nuevo elemento</div>
+                        <div class="col-6"><kbd>Ctrl + S</kbd></div>
+                        <div class="col-6">Guardar</div>
+                        <div class="col-6"><kbd>Ctrl + F</kbd></div>
+                        <div class="col-6">Buscar</div>
+                        <div class="col-6"><kbd>Esc</kbd></div>
+                        <div class="col-6">Cerrar modal</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Contacto -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5><i class="bi bi-question-circle"></i> ¿Necesitas Ayuda?</h5>
+                </div>
+                <div class="card-body">
+                    <p>Si tienes dudas o necesitas permisos adicionales, contacta al Superadmin:</p>
+                    <div class="alert alert-warning">
+                        <strong><i class="bi bi-envelope"></i> Soporte Interno</strong><br>
+                        Consulta con tu supervisor o el administrador del sistema para resolver dudas técnicas.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Enlaces Rápidos -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5><i class="bi bi-link-45deg"></i> Enlaces Rápidos</h5>
+                </div>
+                <div class="card-body">
+                    <div class="list-group list-group-flush">
+                        <a href="{{ url_for('admin_dashboard') }}" class="list-group-item list-group-item-action">
+                            <i class="bi bi-speedometer2"></i> Dashboard
+                        </a>
+                        <a href="{{ url_for('admin_companies') }}" class="list-group-item list-group-item-action">
+                            <i class="bi bi-building"></i> Empresas
+                        </a>
+                        <a href="{{ url_for('admin_users') }}" class="list-group-item list-group-item-action">
+                            <i class="bi bi-people"></i> Usuarios
+                        </a>
+                        <a href="{{ url_for('admin_devices') }}" class="list-group-item list-group-item-action">
+                            <i class="bi bi-phone"></i> Dispositivos
+                        </a>
+                        <a href="{{ url_for('admin_labels') }}" class="list-group-item list-group-item-action">
+                            <i class="bi bi-qr-code"></i> Etiquetas
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Smooth scrolling para enlaces internos
+document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+    anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        document.querySelector(this.getAttribute('href')).scrollIntoView({
+            behavior: 'smooth'
+        });
+    });
+});
+</script>
+{% endblock %}

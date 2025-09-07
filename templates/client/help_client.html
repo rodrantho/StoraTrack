@@ -1,0 +1,432 @@
+{% extends "base.html" %}
+
+{% block title %}Guía de Cliente - StoraTrack{% endblock %}
+
+{% block extra_css %}
+<style>
+.help-section {
+    background: #f8f9fa;
+    border-left: 4px solid #17a2b8;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 0 8px 8px 0;
+}
+
+.help-section h4 {
+    color: #17a2b8;
+    margin-bottom: 15px;
+}
+
+.step-list {
+    counter-reset: step-counter;
+    list-style: none;
+    padding-left: 0;
+}
+
+.step-list li {
+    counter-increment: step-counter;
+    margin-bottom: 10px;
+    padding-left: 40px;
+    position: relative;
+}
+
+.step-list li::before {
+    content: counter(step-counter);
+    position: absolute;
+    left: 0;
+    top: 0;
+    background: #17a2b8;
+    color: white;
+    width: 25px;
+    height: 25px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.quick-action {
+    background: #d1ecf1;
+    border: 1px solid #17a2b8;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 15px;
+}
+
+.quick-action h6 {
+    color: #0c5460;
+    margin-bottom: 10px;
+}
+
+.badge-role {
+    background: #17a2b8;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 15px;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.feature-card {
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.feature-card h5 {
+    color: #17a2b8;
+    margin-bottom: 15px;
+}
+
+.feature-list {
+    list-style: none;
+    padding: 0;
+}
+
+.feature-list li {
+    padding: 8px 0;
+    border-bottom: 1px solid #f8f9fa;
+}
+
+.feature-list li:last-child {
+    border-bottom: none;
+}
+
+.feature-list li::before {
+    content: "📱";
+    margin-right: 10px;
+}
+
+.tip-box {
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 15px;
+}
+
+.tip-box h6 {
+    color: #856404;
+    margin-bottom: 10px;
+}
+
+.qr-demo {
+    text-align: center;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    margin: 15px 0;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: bold;
+    margin-right: 5px;
+}
+
+.status-active { background: #d4edda; color: #155724; }
+.status-inactive { background: #f8d7da; color: #721c24; }
+.status-maintenance { background: #fff3cd; color: #856404; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2><i class="bi bi-person-circle"></i> Guía de Cliente</h2>
+                    <p class="text-muted">Guía completa para usuarios cliente de StoraTrack</p>
+                    <span class="badge-role">CLIENTE</span>
+                </div>
+                <a href="{{ url_for('client_dashboard') }}" class="btn btn-outline-info">
+                    <i class="bi bi-arrow-left"></i> Volver al Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <!-- Bienvenida -->
+            <div class="help-section">
+                <h4><i class="bi bi-hand-wave"></i> ¡Bienvenido a StoraTrack!</h4>
+                <p>Como <strong>Cliente</strong>, puedes gestionar y rastrear todos los dispositivos de tu empresa de manera fácil y eficiente. StoraTrack te ayuda a mantener un control completo de tu inventario tecnológico.</p>
+            </div>
+
+            <!-- Primeros Pasos -->
+            <div class="help-section">
+                <h4><i class="bi bi-play-circle"></i> Primeros Pasos</h4>
+                <p>Sigue estos pasos para comenzar a usar StoraTrack:</p>
+                <ol class="step-list">
+                    <li><strong>Explora tu dashboard</strong><br>
+                        Familiarízate con las estadísticas y gráficos de tu empresa.
+                    </li>
+                    <li><strong>Revisa tus dispositivos</strong><br>
+                        Ve a "Mis Dispositivos" para ver todos los equipos registrados.
+                    </li>
+                    <li><strong>Aprende a usar códigos QR</strong><br>
+                        Los códigos QR te permiten acceder rápidamente a la información de cada dispositivo.
+                    </li>
+                    <li><strong>Genera tu primer reporte</strong><br>
+                        Crea reportes personalizados para analizar tu inventario.
+                    </li>
+                    <li><strong>Configura tu perfil</strong><br>
+                        Actualiza tu información personal y preferencias.
+                    </li>
+                </ol>
+            </div>
+
+            <!-- Funcionalidades Principales -->
+            <div class="help-section">
+                <h4><i class="bi bi-grid-3x3-gap"></i> ¿Qué Puedes Hacer?</h4>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="feature-card">
+                            <h5><i class="bi bi-phone"></i> Gestionar Dispositivos</h5>
+                            <ul class="feature-list">
+                                <li>Ver todos tus dispositivos</li>
+                                <li>Buscar por nombre, modelo o ubicación</li>
+                                <li>Ver detalles completos de cada equipo</li>
+                                <li>Filtrar por estado o tipo</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="feature-card">
+                            <h5><i class="bi bi-qr-code-scan"></i> Códigos QR</h5>
+                            <ul class="feature-list">
+                                <li>Escanear códigos QR de dispositivos</li>
+                                <li>Acceso rápido a información</li>
+                                <li>Verificar ubicación actual</li>
+                                <li>Reportar problemas fácilmente</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="feature-card">
+                            <h5><i class="bi bi-graph-up"></i> Reportes y Análisis</h5>
+                            <ul class="feature-list">
+                                <li>Generar reportes personalizados</li>
+                                <li>Exportar datos a Excel/PDF</li>
+                                <li>Ver estadísticas de uso</li>
+                                <li>Analizar tendencias</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="feature-card">
+                            <h5><i class="bi bi-geo-alt"></i> Ubicaciones</h5>
+                            <ul class="feature-list">
+                                <li>Ver dispositivos por ubicación</li>
+                                <li>Mapa de distribución</li>
+                                <li>Filtrar por oficina o área</li>
+                                <li>Rastrear movimientos</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cómo Usar Códigos QR -->
+            <div class="help-section">
+                <h4><i class="bi bi-qr-code"></i> Cómo Usar los Códigos QR</h4>
+                <p>Los códigos QR son la forma más rápida de acceder a la información de tus dispositivos:</p>
+                
+                <div class="qr-demo">
+                    <i class="bi bi-qr-code" style="font-size: 4rem; color: #17a2b8;"></i>
+                    <p><strong>Ejemplo de código QR</strong></p>
+                    <small>Cada dispositivo tiene su código único</small>
+                </div>
+                
+                <ol class="step-list">
+                    <li><strong>Encuentra el código QR</strong><br>
+                        Cada dispositivo tiene una etiqueta con código QR pegada.
+                    </li>
+                    <li><strong>Escanea con tu móvil</strong><br>
+                        Usa la cámara de tu teléfono o una app de códigos QR.
+                    </li>
+                    <li><strong>Accede a la información</strong><br>
+                        Se abrirá automáticamente la página del dispositivo.
+                    </li>
+                    <li><strong>Revisa los detalles</strong><br>
+                        Ve toda la información: estado, ubicación, especificaciones.
+                    </li>
+                </ol>
+            </div>
+
+            <!-- Estados de Dispositivos -->
+            <div class="help-section">
+                <h4><i class="bi bi-info-circle"></i> Estados de Dispositivos</h4>
+                <p>Cada dispositivo puede tener diferentes estados:</p>
+                <div class="row">
+                    <div class="col-md-4">
+                        <span class="status-badge status-active">Activo</span>
+                        <p><small>El dispositivo está en uso normal</small></p>
+                    </div>
+                    <div class="col-md-4">
+                        <span class="status-badge status-inactive">Inactivo</span>
+                        <p><small>El dispositivo no está en uso</small></p>
+                    </div>
+                    <div class="col-md-4">
+                        <span class="status-badge status-maintenance">Mantenimiento</span>
+                        <p><small>El dispositivo está en reparación</small></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <!-- Acciones Rápidas -->
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="bi bi-lightning-charge"></i> Acciones Rápidas</h5>
+                </div>
+                <div class="card-body">
+                    <div class="quick-action">
+                        <h6><i class="bi bi-phone"></i> Ver Mis Dispositivos</h6>
+                        <p>Accede a todos tus equipos</p>
+                        <a href="{{ url_for('client_devices') }}" class="btn btn-sm btn-info">Ir a Dispositivos</a>
+                    </div>
+                    
+                    <div class="quick-action">
+                        <h6><i class="bi bi-search"></i> Buscar Dispositivo</h6>
+                        <p>Encuentra un equipo específico</p>
+                        <a href="{{ url_for('client_devices') }}?search=1" class="btn btn-sm btn-info">Buscar</a>
+                    </div>
+                    
+                    <div class="quick-action">
+                        <h6><i class="bi bi-file-earmark-text"></i> Generar Reporte</h6>
+                        <p>Crea un reporte personalizado</p>
+                        <a href="{{ url_for('client_reports') }}" class="btn btn-sm btn-info">Crear Reporte</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Consejos Útiles -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5><i class="bi bi-lightbulb"></i> Consejos Útiles</h5>
+                </div>
+                <div class="card-body">
+                    <div class="tip-box">
+                        <h6><i class="bi bi-phone"></i> Acceso Móvil</h6>
+                        <p>Puedes acceder a StoraTrack desde tu móvil para consultas rápidas en cualquier lugar.</p>
+                    </div>
+                    
+                    <div class="tip-box">
+                        <h6><i class="bi bi-bookmark"></i> Favoritos</h6>
+                        <p>Marca como favoritos los dispositivos que consultas frecuentemente.</p>
+                    </div>
+                    
+                    <div class="tip-box">
+                        <h6><i class="bi bi-bell"></i> Notificaciones</h6>
+                        <p>Configura alertas para recibir notificaciones sobre cambios importantes.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Soporte -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5><i class="bi bi-headset"></i> ¿Necesitas Ayuda?</h5>
+                </div>
+                <div class="card-body">
+                    <p>Si tienes problemas o preguntas:</p>
+                    <div class="alert alert-info">
+                        <strong><i class="bi bi-envelope"></i> Contacta al Soporte</strong><br>
+                        Nuestro equipo está disponible para ayudarte con cualquier consulta técnica.
+                    </div>
+                    
+                    <div class="alert alert-warning">
+                        <strong><i class="bi bi-exclamation-triangle"></i> Reportar Problema</strong><br>
+                        Si encuentras un dispositivo dañado o con problemas, repórtalo inmediatamente.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Enlaces Útiles -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5><i class="bi bi-link-45deg"></i> Enlaces Útiles</h5>
+                </div>
+                <div class="card-body">
+                    <div class="list-group list-group-flush">
+                        <a href="{{ url_for('client_dashboard') }}" class="list-group-item list-group-item-action">
+                            <i class="bi bi-speedometer2"></i> Mi Dashboard
+                        </a>
+                        <a href="{{ url_for('client_devices') }}" class="list-group-item list-group-item-action">
+                            <i class="bi bi-phone"></i> Mis Dispositivos
+                        </a>
+                        <a href="{{ url_for('client_reports') }}" class="list-group-item list-group-item-action">
+                            <i class="bi bi-graph-up"></i> Reportes
+                        </a>
+                        <a href="{{ url_for('client_profile') }}" class="list-group-item list-group-item-action">
+                            <i class="bi bi-person-gear"></i> Mi Perfil
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- FAQ Rápido -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5><i class="bi bi-question-circle"></i> Preguntas Frecuentes</h5>
+                </div>
+                <div class="card-body">
+                    <div class="accordion" id="faqAccordion">
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq1">
+                                    ¿Cómo escaneo un código QR?
+                                </button>
+                            </h2>
+                            <div id="faq1" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                <div class="accordion-body">
+                                    Usa la cámara de tu móvil o una app de códigos QR para escanear la etiqueta del dispositivo.
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq2">
+                                    ¿Puedo exportar mis reportes?
+                                </button>
+                            </h2>
+                            <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                <div class="accordion-body">
+                                    Sí, puedes exportar reportes en formato Excel o PDF desde la sección de reportes.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Smooth scrolling para enlaces internos
+document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+    anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        document.querySelector(this.getAttribute('href')).scrollIntoView({
+            behavior: 'smooth'
+        });
+    });
+});
+</script>
+{% endblock %}

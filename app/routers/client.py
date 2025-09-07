@@ -622,3 +622,28 @@ def generate_csv_report(db: Session, company_id: int, year: int, month: int, fec
     writer.writerow(['', '', '', '', '', '', '', 'TOTAL:', total_general])
     
     return output.getvalue()
+
+
+# ==================== HELP ROUTES ====================
+
+@router.get("/help", response_class=HTMLResponse)
+async def help_client(
+    request: Request,
+    current_user: User = Depends(get_current_active_user)
+):
+    """Página de ayuda para Cliente"""
+    # Verificar que el usuario sea un cliente
+    if current_user.role != UserRole.CLIENT_USER:
+        raise HTTPException(status_code=403, detail="Acceso denegado")
+    
+    # Breadcrumbs
+    breadcrumbs = [
+        {"title": "Dashboard", "url": "/client/dashboard"},
+        {"title": "Guía de Cliente", "url": ""}
+    ]
+    
+    return templates.TemplateResponse("client/help_client.html", {
+        "request": request,
+        "current_user": current_user,
+        "breadcrumbs": breadcrumbs
+    })
