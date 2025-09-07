@@ -7,6 +7,7 @@ from app.models import (
 )
 from app.auth import get_password_hash
 from app.config import settings
+from app.utils.datetime_utils import now_local
 import logging
 
 logging.basicConfig(level=logging.INFO)
@@ -24,7 +25,7 @@ def create_superadmin(db: Session):
     
     # Verificar si ya existe
     existing_admin = db.query(User).filter(
-        User.email == "admin@admin.com"
+        User.email == "rodrantho@outlook.com"
     ).first()
     
     if existing_admin:
@@ -32,12 +33,12 @@ def create_superadmin(db: Session):
         return existing_admin
     
     admin_user = User(
-        email="admin@admin.com",
-        hashed_password=get_password_hash("admin"),
-        full_name="Administrador del Sistema",
+        email="rodrantho@outlook.com",
+        hashed_password=get_password_hash("Kernel1.0"),
+        full_name="Rodrigo Anthonisen",
         role=UserRole.SUPERADMIN,
         is_active=True,
-        created_at=datetime.utcnow()
+        created_at=now_local()
     )
     
     db.add(admin_user)
@@ -280,7 +281,7 @@ def create_demo_devices(db: Session, company: Company, locations: list, tags: li
             "model": "Pavilion Desktop",
             "brand": "HP",
             "condition": DeviceCondition.REGULAR,
-            "status": DeviceStatus.ESPERANDO_A_RECIBIR,
+            "status": DeviceStatus.ESPERANDO_RECIBIR,
             "location_name": "Área de Recepción",
             "tag_names": ["Reparación"],
             "days_ago": 3
@@ -343,10 +344,10 @@ def create_demo_devices(db: Session, company: Company, locations: list, tags: li
             continue
         
         # Calcular fechas
-        fecha_ingreso = datetime.utcnow() - timedelta(days=device_data["days_ago"])
+        fecha_ingreso = now_local() - timedelta(days=device_data["days_ago"])
         fecha_salida = None
         if "fecha_salida_days_ago" in device_data:
-            fecha_salida = datetime.utcnow() - timedelta(days=device_data["fecha_salida_days_ago"])
+            fecha_salida = now_local() - timedelta(days=device_data["fecha_salida_days_ago"])
         
         # Obtener ubicación
         location = location_map.get(device_data["location_name"])
@@ -452,7 +453,7 @@ def init_database():
         logger.info(f"✓ Tags creados: {len(demo_tags)}")
         logger.info(f"✓ Dispositivos creados: {len(demo_devices)}")
         logger.info("\nCredenciales de acceso:")
-        logger.info("- Superadmin: admin@admin.com / admin")
+        logger.info("- Superadmin: rodrantho@outlook.com / Kernel1.0")
         logger.info("- Staff: staff@demo.com / staff123")
         logger.info("- Cliente: cliente@demo.com / cliente123")
         logger.info("="*50)

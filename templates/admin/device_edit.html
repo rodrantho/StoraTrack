@@ -448,70 +448,39 @@ document.querySelector('select[name="company_id"]').addEventListener('change', f
     }
 });
 
-// Editar equipo
-document.getElementById('editDeviceForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    
-    const formData = new FormData(this);
-    const data = Object.fromEntries(formData.entries());
-    
-    // Obtener tags seleccionados
-    const selectedTags = [];
-    document.querySelectorAll('input[name="tags"]:checked').forEach(checkbox => {
-        selectedTags.push(parseInt(checkbox.value));
-    });
-    data.tags = selectedTags;
-    
-    fetch(`/admin/devices/{{ device.id }}`, {
-        method: 'PUT',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data)
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            showAlert('Equipo actualizado exitosamente', 'success');
+// Editar equipo usando el manejador estandarizado
+new FormHandler('editDeviceForm', {
+    url: '/admin/devices/{{ device.id }}',
+    method: 'PUT',
+    useFormData: false,
+    successMessage: 'Equipo actualizado exitosamente',
+    errorMessage: 'Error al actualizar el equipo',
+    processData: function(formData) {
+        const data = Object.fromEntries(formData.entries());
+        
+        // Obtener tags seleccionados
+        const selectedTags = [];
+        document.querySelectorAll('input[name="tags"]:checked').forEach(checkbox => {
+            selectedTags.push(parseInt(checkbox.value));
+        });
+        data.tags = selectedTags;
+        
+        return data;
+    },
+    onSuccess: function(data) {
+        if (data.device && data.device.id) {
             window.location.href = `/admin/devices/${data.device.id}`;
-        } else {
-            showAlert(data.message || 'Error al actualizar el equipo', 'danger');
         }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        showAlert('Error al actualizar el equipo', 'danger');
-    });
+    }
 });
 
 // Mover equipo
-document.getElementById('moveDeviceForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    
-    const formData = new FormData(this);
-    const data = Object.fromEntries(formData.entries());
-    
-    fetch(`/admin/devices/{{ device.id }}/move`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data)
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            showAlert('Equipo movido exitosamente', 'success');
-            bootstrap.Modal.getInstance(document.getElementById('moveDeviceModal')).hide();
-            location.reload();
-        } else {
-            showAlert(data.message || 'Error al mover el equipo', 'danger');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        showAlert('Error al mover el equipo', 'danger');
-    });
+new FormHandler('moveDeviceForm', {
+    url: `/admin/devices/{{ device.id }}/move`,
+    method: 'POST',
+    useFormData: false,
+    successMessage: 'Equipo movido exitosamente',
+    errorMessage: 'Error al mover el equipo'
 });
 
 function generateQR(deviceId) {

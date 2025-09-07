@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 from datetime import datetime
 from app.database import get_db
+from app.utils.datetime_utils import now_local
 from app.models import (
     User, Company, Device, Location, Tag, DeviceMovement, 
     MonthlyReport, UserRole, DeviceStatus
@@ -43,7 +44,7 @@ async def get_companies(
 async def create_company(
     company: CompanyCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_superadmin)
+    current_user: User = Depends(require_admin_or_staff)
 ):
     """Crear nueva empresa"""
     # Verificar que no exista el RUT
@@ -85,7 +86,7 @@ async def update_company(
     company_id: int,
     company_update: CompanyUpdate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_superadmin)
+    current_user: User = Depends(require_admin_or_staff)
 ):
     """Actualizar empresa"""
     company = db.query(Company).filter(
@@ -103,7 +104,7 @@ async def update_company(
     for field, value in update_data.items():
         setattr(company, field, value)
     
-    company.updated_at = datetime.utcnow()
+    company.updated_at = now_local()
     db.commit()
     db.refresh(company)
     return company
@@ -112,7 +113,7 @@ async def update_company(
 async def delete_company(
     company_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_superadmin)
+    current_user: User = Depends(require_admin_or_staff)
 ):
     """Eliminar empresa (soft delete)"""
     company = db.query(Company).filter(
@@ -252,7 +253,7 @@ async def create_device(
         db_device.tags = tags
     
     # Generar códigos QR y barcode
-    qr_data = f"StoraTrack-{db_device.name}-{datetime.utcnow().timestamp()}"
+    qr_data = f"StoraTrack-{db_device.name}-{now_local().timestamp()}"
     db_device.qr_code = qr_data
     db_device.barcode = qr_data
     
@@ -350,7 +351,7 @@ async def update_device(
         ).all()
         device.tags = tags
     
-    device.updated_at = datetime.utcnow()
+    device.updated_at = now_local()
     db.commit()
     
     # Crear movimiento si cambió estado o ubicación
@@ -399,15 +400,33 @@ async def create_location(
     current_user: User = Depends(require_admin_or_staff)
 ):
     """Crear nueva ubicación"""
-    # Verificar acceso a la empresa
-    if not check_company_access(current_user, location.company_id):
+    # Verificar acceso a la empresa principal si se especifica
+    if location.company_id and not check_company_access(current_user, location.company_id):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="No tienes acceso a esta empresa"
         )
     
-    db_location = Location(**location.dict())
+    # Verificar acceso a las empresas con acceso
+    if location.company_ids:
+        for company_id in location.company_ids:
+            if not check_company_access(current_user, company_id):
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail=f"No tienes acceso a la empresa con ID {company_id}"
+                )
+    
+    # Crear ubicación sin las company_ids (no es campo del modelo)
+    location_data = location.dict(exclude={'company_ids'})
+    db_location = Location(**location_data)
     db.add(db_location)
+    db.flush()  # Para obtener el ID
+    
+    # Agregar empresas con acceso
+    if location.company_ids:
+        companies = db.query(Company).filter(Company.id.in_(location.company_ids)).all()
+        db_location.companies = companies
+    
     db.commit()
     db.refresh(db_location)
     return db_location
@@ -423,8 +442,32 @@ async def get_dashboard_stats(
     total_devices = db.query(Device).filter(Device.is_active == True).count()
     total_users = db.query(User).filter(User.is_active == True).count()
     
-    # Calcular ingresos mensuales (simplificado)
-    monthly_revenue = 0.0  # Implementar cálculo real
+    # Calcular ingresos mensuales - suma de costos de todas las empresas
+    from app.services.cost_calculator import CostCalculator
+    from datetime import datetime
+    
+    monthly_revenue = 0.0
+    try:
+        calculator = CostCalculator(db)
+        current_date = datetime.now()
+        
+        # Obtener todas las empresas activas
+        active_companies = db.query(Company).filter(Company.is_active == True).all()
+        
+        for company in active_companies:
+            try:
+                # Calcular costo mensual de cada empresa
+                company_monthly = calculator.calculate_company_monthly_cost(
+                    company, current_date.year, current_date.month
+                )
+                monthly_revenue += company_monthly['total_cost']
+            except Exception as e:
+                # Si hay error con una empresa específica, continuar con las demás
+                continue
+                
+    except Exception as e:
+        # Si hay error general, mantener en 0
+        monthly_revenue = 0.0
     
     return DashboardStats(
         total_companies=total_companies,
@@ -506,7 +549,7 @@ async def calculate_device_cost(
         )
     
     if not fecha_hasta:
-        fecha_hasta = datetime.utcnow()
+        fecha_hasta = now_local()
     
     # Calcular costo
     if device.fecha_salida and device.fecha_salida < fecha_hasta:

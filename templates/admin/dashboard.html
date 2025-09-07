@@ -6,11 +6,11 @@
 
 {% block header_actions %}
 <div class="btn-group" role="group">
-    <a href="/admin/companies/new" class="btn btn-primary">
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createCompanyModal">
         <i class="bi bi-plus-circle me-1"></i>
         Nueva Empresa
-    </a>
-    <a href="/admin/users/new" class="btn btn-outline-primary">
+    </button>
+    <a href="/admin/users/create" class="btn btn-outline-primary">
         <i class="bi bi-person-plus me-1"></i>
         Nuevo Usuario
     </a>
@@ -21,81 +21,254 @@
 <!-- Statistics Cards -->
 <div class="row mb-4">
     <div class="col-xl-3 col-md-6 mb-4">
-        <div class="card border-left-primary shadow h-100 py-2 card-stats">
-            <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                    <div class="col mr-2">
-                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                            Empresas Activas
+        <a href="/admin/companies" class="text-decoration-none">
+            <div class="card border-left-primary shadow h-100 py-2 card-stats card-clickable">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Empresas Activas
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {{ stats.total_companies }}
+                            </div>
                         </div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800">
-                            {{ stats.total_companies }}
+                        <div class="col-auto">
+                            <i class="bi bi-building text-primary" style="font-size: 2rem;"></i>
                         </div>
-                    </div>
-                    <div class="col-auto">
-                        <i class="bi bi-building text-primary" style="font-size: 2rem;"></i>
                     </div>
                 </div>
             </div>
-        </div>
+        </a>
     </div>
     
     <div class="col-xl-3 col-md-6 mb-4">
-        <div class="card border-left-success shadow h-100 py-2" style="border-left: 4px solid #28a745;">
-            <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                    <div class="col mr-2">
-                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
-                            Total Equipos
+        <a href="/admin/devices" class="text-decoration-none">
+            <div class="card border-left-success shadow h-100 py-2 card-clickable" style="border-left: 4px solid #28a745;">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Total Equipos
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {{ stats.total_devices }}
+                            </div>
                         </div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800">
-                            {{ stats.total_devices }}
+                        <div class="col-auto">
+                            <i class="bi bi-laptop text-success" style="font-size: 2rem;"></i>
                         </div>
-                    </div>
-                    <div class="col-auto">
-                        <i class="bi bi-laptop text-success" style="font-size: 2rem;"></i>
                     </div>
                 </div>
             </div>
-        </div>
+        </a>
     </div>
     
     <div class="col-xl-3 col-md-6 mb-4">
-        <div class="card border-left-info shadow h-100 py-2" style="border-left: 4px solid #17a2b8;">
-            <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                    <div class="col mr-2">
-                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
-                            Usuarios Activos
+        <a href="/admin/users" class="text-decoration-none">
+            <div class="card border-left-info shadow h-100 py-2 card-clickable" style="border-left: 4px solid #17a2b8;">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Usuarios Activos
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {{ stats.total_users }}
+                            </div>
                         </div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800">
-                            {{ stats.total_users }}
+                        <div class="col-auto">
+                            <i class="bi bi-people text-info" style="font-size: 2rem;"></i>
                         </div>
-                    </div>
-                    <div class="col-auto">
-                        <i class="bi bi-people text-info" style="font-size: 2rem;"></i>
                     </div>
                 </div>
             </div>
-        </div>
+        </a>
     </div>
     
     <div class="col-xl-3 col-md-6 mb-4">
-        <div class="card border-left-warning shadow h-100 py-2" style="border-left: 4px solid #ffc107;">
-            <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                    <div class="col mr-2">
-                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
-                            Ingresos Mensuales
+        <a href="/admin/reports" class="text-decoration-none">
+            <div class="card border-left-warning shadow h-100 py-2 card-clickable" style="border-left: 4px solid #ffc107;">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Ingresos Mensuales
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                ${{ "{:,.2f}".format(stats.monthly_revenue) }}
+                            </div>
                         </div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800">
-                            ${{ "{:,.2f}".format(stats.monthly_revenue) }}
+                        <div class="col-auto">
+                            <i class="bi bi-currency-dollar text-warning" style="font-size: 2rem;"></i>
                         </div>
-                    </div>
-                    <div class="col-auto">
-                        <i class="bi bi-currency-dollar text-warning" style="font-size: 2rem;"></i>
                     </div>
                 </div>
+            </div>
+        </a>
+    </div>
+</div>
+
+<!-- Locations Management Section -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold text-purple">
+                    <i class="bi bi-geo-alt me-2"></i>
+                    Gestión de Ubicaciones
+                </h6>
+                <div class="btn-group" role="group">
+                    <a href="/admin/locations" class="btn btn-sm btn-outline-purple">
+                        <i class="bi bi-list me-1"></i>
+                        Ver Todas
+                    </a>
+                    <button type="button" class="btn btn-sm btn-purple" data-bs-toggle="modal" data-bs-target="#quickLocationModal">
+                        <i class="bi bi-plus-circle me-1"></i>
+                        Nueva Ubicación
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <!-- Locations Summary Cards -->
+                    <div class="col-md-3 mb-3">
+                        <a href="/admin/locations" class="text-decoration-none">
+                            <div class="card bg-light border-0 card-clickable">
+                                <div class="card-body text-center">
+                                    <i class="bi bi-building text-primary" style="font-size: 2rem;"></i>
+                                    <h5 class="mt-2 mb-1">{{ stats.total_locations or 0 }}</h5>
+                                    <small class="text-muted">Total Ubicaciones</small>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="/admin/locations?filter=occupied" class="text-decoration-none">
+                            <div class="card bg-light border-0 card-clickable">
+                                <div class="card-body text-center">
+                                    <i class="bi bi-archive text-success" style="font-size: 2rem;"></i>
+                                    <h5 class="mt-2 mb-1">{{ stats.occupied_locations or 0 }}</h5>
+                                    <small class="text-muted">Con Equipos</small>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="/admin/locations?filter=empty" class="text-decoration-none">
+                            <div class="card bg-light border-0 card-clickable">
+                                <div class="card-body text-center">
+                                    <i class="bi bi-inbox text-warning" style="font-size: 2rem;"></i>
+                                    <h5 class="mt-2 mb-1">{{ stats.empty_locations or 0 }}</h5>
+                                    <small class="text-muted">Vacías</small>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="/admin/locations?filter=over_capacity" class="text-decoration-none">
+                            <div class="card bg-light border-0 card-clickable">
+                                <div class="card-body text-center">
+                                    <i class="bi bi-exclamation-triangle text-danger" style="font-size: 2rem;"></i>
+                                    <h5 class="mt-2 mb-1">{{ stats.over_capacity_locations or 0 }}</h5>
+                                    <small class="text-muted">Sobre Capacidad</small>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+                
+                <!-- Recent Locations Table -->
+                {% if recent_locations %}
+                    <div class="table-responsive mt-3">
+                        <table class="table table-sm table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Ubicación</th>
+                                    <th>Tipo</th>
+                                    <th>Empresa Principal</th>
+                                    <th>Empresas con Acceso</th>
+                                    <th>Equipos</th>
+                                    <th>Capacidad</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for location in recent_locations %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <i class="bi bi-geo-alt text-muted me-2"></i>
+                                            <div>
+                                                <div class="fw-bold">{{ location.name }}</div>
+                                                {% if location.code %}
+                                                    <small class="text-muted">{{ location.code }}</small>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-secondary">{{ location.location_type or 'area' }}</span>
+                                    </td>
+                                    <td>
+                                        {% if location.primary_company %}
+                                            <small>{{ location.primary_company.name }}</small>
+                                        {% else %}
+                                            <small class="text-muted">Sin empresa principal</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if location.companies %}
+                                            {% for company in location.companies[:2] %}
+                                                <span class="badge bg-info me-1">{{ company.name }}</span>
+                                            {% endfor %}
+                                            {% if location.companies|length > 2 %}
+                                                <span class="badge bg-light text-dark">+{{ location.companies|length - 2 }}</span>
+                                            {% endif %}
+                                        {% else %}
+                                            <small class="text-muted">Ninguna</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-primary">{{ location.devices|length if location.devices else 0 }}</span>
+                                    </td>
+                                    <td>
+                                        {% if location.max_capacity %}
+                                            <div class="progress" style="height: 8px; width: 60px;">
+                                                {% set usage_percent = ((location.devices|length / location.max_capacity) * 100) if location.max_capacity > 0 else 0 %}
+                                                <div class="progress-bar {% if usage_percent > 100 %}bg-danger{% elif usage_percent > 80 %}bg-warning{% else %}bg-success{% endif %}" 
+                                                     style="width: {{ [usage_percent, 100]|min }}%"></div>
+                                            </div>
+                                            <small class="text-muted">{{ location.devices|length if location.devices else 0 }}/{{ location.max_capacity }}</small>
+                                        {% else %}
+                                            <small class="text-muted">Sin límite</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <a href="/admin/locations/{{ location.id }}" class="btn btn-outline-primary btn-sm" title="Ver detalles">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            <a href="/admin/locations/{{ location.id }}/edit" class="btn btn-outline-secondary btn-sm" title="Editar">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center text-muted py-4">
+                        <i class="bi bi-geo-alt" style="font-size: 3rem; opacity: 0.3;"></i>
+                        <p class="mt-2">No hay ubicaciones registradas</p>
+                        <button type="button" class="btn btn-purple btn-sm" data-bs-toggle="modal" data-bs-target="#quickLocationModal">
+                            <i class="bi bi-plus-circle me-1"></i>
+                            Crear Primera Ubicación
+                        </button>
+                    </div>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -149,9 +322,9 @@
                     <div class="text-center text-muted py-4">
                         <i class="bi bi-building" style="font-size: 3rem; opacity: 0.3;"></i>
                         <p class="mt-2">No hay empresas registradas</p>
-                        <a href="/admin/companies/new" class="btn btn-primary btn-sm">
+                        <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#createCompanyModal">
                             Crear Primera Empresa
-                        </a>
+                        </button>
                     </div>
                 {% endif %}
             </div>
@@ -201,7 +374,7 @@
                                         </div>
                                     </td>
                                     <td>
-                                        <span class="badge bg-{{ 'danger' if user.role.value == 'SUPERADMIN' else 'warning' if user.role.value == 'STAFF' else 'info' }}">
+                                        <span class="badge bg-{{ 'danger' if user.role.value == 'superadmin' else 'warning' if user.role.value == 'staff' else 'info' }}">
                                             {{ user.role.value }}
                                         </span>
                                     </td>
@@ -228,7 +401,7 @@
                     <div class="text-center text-muted py-4">
                         <i class="bi bi-people" style="font-size: 3rem; opacity: 0.3;"></i>
                         <p class="mt-2">No hay usuarios registrados</p>
-                        <a href="/admin/users/new" class="btn btn-success btn-sm">
+                        <a href="/admin/users/create" class="btn btn-success btn-sm">
                             Crear Primer Usuario
                         </a>
                     </div>
@@ -322,13 +495,13 @@
             <div class="card-body">
                 <div class="row">
                     <div class="col-md-3 mb-3">
-                        <a href="/admin/companies/new" class="btn btn-outline-primary w-100 h-100 d-flex flex-column align-items-center justify-content-center py-3">
+                        <button class="btn btn-outline-primary w-100 h-100 d-flex flex-column align-items-center justify-content-center py-3" data-bs-toggle="modal" data-bs-target="#createCompanyModal">
                             <i class="bi bi-building" style="font-size: 2rem;"></i>
                             <span class="mt-2">Nueva Empresa</span>
-                        </a>
+                        </button>
                     </div>
                     <div class="col-md-3 mb-3">
-                        <a href="/admin/users/new" class="btn btn-outline-success w-100 h-100 d-flex flex-column align-items-center justify-content-center py-3">
+                        <a href="/admin/users/create" class="btn btn-outline-success w-100 h-100 d-flex flex-column align-items-center justify-content-center py-3">
                             <i class="bi bi-person-plus" style="font-size: 2rem;"></i>
                             <span class="mt-2">Nuevo Usuario</span>
                         </a>
@@ -347,6 +520,122 @@
                     </div>
                 </div>
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Location Creation Modal -->
+<div class="modal fade" id="quickLocationModal" tabindex="-1" aria-labelledby="quickLocationModalLabel" aria-hidden="true" style="z-index: 1055;">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="quickLocationModalLabel">
+                    <i class="bi bi-geo-alt me-2"></i>
+                    Nueva Ubicación Rápida
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="quickLocationForm" action="/api/locations" method="POST">
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Nombre *</label>
+                                <input type="text" class="form-control" name="name" required placeholder="Ej: Estantería A1">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Código</label>
+                                <input type="text" class="form-control" name="code" placeholder="Ej: EST-A1">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Tipo de Ubicación</label>
+                                <select class="form-select" name="location_type">
+                                    <option value="area">Área</option>
+                                    <option value="deposito">Depósito</option>
+                                    <option value="estanteria">Estantería</option>
+                                    <option value="estante">Estante</option>
+                                    <option value="caja">Caja</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Ubicación Padre</label>
+                                <select class="form-select" name="parent_id">
+                                    <option value="">Sin ubicación padre...</option>
+                                    {% for location in locations %}
+                                    <option value="{{ location.id }}">{{ location.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Capacidad Máxima</label>
+                                <input type="number" class="form-control" name="max_capacity" min="0" placeholder="Número máximo de equipos">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Número de Estantes</label>
+                                <input type="number" class="form-control" name="shelf_count" min="0" placeholder="Para estanterías">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Empresa Principal</label>
+                        <select class="form-select" name="company_id" id="quickLocationCompanySelect">
+                            <option value="">Sin empresa principal...</option>
+                            {% for company in companies %}
+                            <option value="{{ company.id }}">{{ company.name }}</option>
+                            {% endfor %}
+                        </select>
+                        <small class="form-text text-muted">Empresas disponibles: {{ companies|length }}</small>
+                        {% if not companies %}
+                        <div class="alert alert-warning mt-2">
+                            <i class="bi bi-exclamation-triangle me-1"></i>
+                            No hay empresas disponibles. <button class="btn btn-link p-0" data-bs-toggle="modal" data-bs-target="#createCompanyModal">Crear una empresa</button>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Empresas con Acceso</label>
+                        <select class="form-select" name="company_ids" multiple>
+                            {% for company in companies %}
+                            <option value="{{ company.id }}">{{ company.name }}</option>
+                            {% endfor %}
+                        </select>
+                        <small class="form-text text-muted">Mantén Ctrl para seleccionar múltiples empresas</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Descripción</label>
+                        <textarea class="form-control" name="description" rows="2" placeholder="Descripción opcional de la ubicación"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle me-1"></i>
+                        Cancelar
+                    </button>
+                    <button type="submit" class="btn btn-purple">
+                        <i class="bi bi-check-circle me-1"></i>
+                        Crear Ubicación
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
@@ -369,5 +658,145 @@
             return new bootstrap.Tooltip(tooltipTriggerEl);
         });
     });
+    
+    // Debug: Check if companies are loaded and handle modal events
+     document.addEventListener('DOMContentLoaded', function() {
+         const companySelect = document.getElementById('quickLocationCompanySelect');
+         const modal = document.getElementById('quickLocationModal');
+         
+         if (companySelect) {
+             console.log('Company select found with', companySelect.options.length, 'options');
+             for (let i = 0; i < companySelect.options.length; i++) {
+                 console.log('Option', i, ':', companySelect.options[i].value, companySelect.options[i].text);
+             }
+         } else {
+             console.log('Company select not found');
+         }
+         
+         // Force refresh select when modal is shown
+         if (modal) {
+             modal.addEventListener('shown.bs.modal', function() {
+                 if (companySelect) {
+                     companySelect.style.display = 'none';
+                     companySelect.offsetHeight; // Trigger reflow
+                     companySelect.style.display = 'block';
+                     console.log('Modal shown, select refreshed');
+                 }
+             });
+         }
+     });
+    
+    // Handle quick location form submission usando el manejador estandarizado
+    new FormHandler('quickLocationForm', {
+        url: '/api/locations',
+        method: 'POST',
+        useFormData: false,
+        successMessage: 'Ubicación creada exitosamente',
+        errorMessage: 'Error al crear la ubicación',
+        processData: function(formData) {
+            // Procesamiento personalizado para el formulario de ubicación
+            const data = {};
+            for (let [key, value] of formData.entries()) {
+                if (key === 'company_ids') {
+                    // Handle multiple select
+                    if (!data[key]) data[key] = [];
+                    data[key].push(parseInt(value));
+                } else if (value !== '') {
+                    if (['parent_id', 'company_id', 'max_capacity', 'shelf_count'].includes(key)) {
+                        data[key] = value ? parseInt(value) : null;
+                    } else {
+                        data[key] = value;
+                    }
+                }
+            }
+            return data;
+        }
+    });
 </script>
+
+<style>
+.card-clickable {
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.card-clickable:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.12), 0 2px 4px rgba(0,0,0,0.08) !important;
+}
+
+.card-clickable:active {
+    transform: translateY(0);
+}
+
+a:hover .card-clickable .text-muted,
+a:hover .card-clickable .text-gray-800,
+a:hover .card-clickable .text-primary,
+a:hover .card-clickable .text-success,
+a:hover .card-clickable .text-info,
+a:hover .card-clickable .text-warning,
+a:hover .card-clickable .text-danger {
+    color: inherit !important;
+}
+</style>
+
+<!-- Modal Crear Empresa -->
+<div class="modal fade" id="createCompanyModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-building"></i> Nueva Empresa</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="/admin/companies/new">
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="name" class="form-label">Nombre de la empresa *</label>
+                            <input type="text" class="form-control" id="name" name="name" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="rut_id" class="form-label">RUT/ID *</label>
+                            <input type="text" class="form-control" id="rut_id" name="rut_id" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="contact_name" class="form-label">Nombre del contacto</label>
+                            <input type="text" class="form-control" id="contact_name" name="contact_name">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="email" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="email" name="email">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="phone" class="form-label">Teléfono</label>
+                            <input type="text" class="form-control" id="phone" name="phone">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="address" class="form-label">Dirección</label>
+                            <input type="text" class="form-control" id="address" name="address">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="costo_base_default" class="form-label">Costo Base por Defecto</label>
+                            <input type="number" step="0.01" class="form-control" id="costo_base_default" name="costo_base_default" value="0.00">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="costo_diario_default" class="form-label">Costo Diario por Defecto</label>
+                            <input type="number" step="0.01" class="form-control" id="costo_diario_default" name="costo_diario_default" value="0.00">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle me-1"></i>
+                        Cancelar
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check-circle me-1"></i>
+                        Crear Empresa
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 {% endblock %}

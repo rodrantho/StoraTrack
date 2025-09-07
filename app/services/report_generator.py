@@ -10,8 +10,7 @@ from reportlab.lib.units import inch
 from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
 from sqlalchemy.orm import Session
 from .cost_calculator import CostCalculator
-from ..models.device import Device
-from ..models.company import Company
+from ..models import Device, Company
 
 class ReportGenerator:
     """Servicio para generar reportes en PDF y CSV"""

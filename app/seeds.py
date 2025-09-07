@@ -88,37 +88,38 @@ def seed_users(db: Session, companies: list):
     print("Creando usuarios...")
     
     users = [
+        # NOTA: Cambiar estas credenciales en producción
         {
             "email": "admin@storatrack.com",
-            "password": "admin123",
+            "password": "change_me_admin_2024",
             "full_name": "Administrador Principal",
             "role": UserRole.superadmin,
             "company_id": None
         },
         {
             "email": "staff@storatrack.com",
-            "password": "staff123",
+            "password": "change_me_staff_2024",
             "full_name": "Personal de Staff",
             "role": UserRole.staff,
             "company_id": None
         },
         {
             "email": "cliente1@techcorp.cl",
-            "password": "cliente123",
+            "password": "change_me_client_2024",
             "full_name": "Usuario TechCorp",
             "role": UserRole.client,
             "company_id": companies[0].id if companies else None
         },
         {
             "email": "cliente2@innovacion.cl",
-            "password": "cliente123",
+            "password": "change_me_client_2024",
             "full_name": "Usuario Innovación",
             "role": UserRole.client,
             "company_id": companies[1].id if len(companies) > 1 else None
         },
         {
             "email": "cliente3@soluciones.cl",
-            "password": "cliente123",
+            "password": "change_me_client_2024",
             "full_name": "Usuario Soluciones",
             "role": UserRole.client,
             "company_id": companies[2].id if len(companies) > 2 else None

@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+
+{% block title %}Información de la Aplicación - StoraTrack{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2><i class="bi bi-info-circle"></i> Información de la Aplicación</h2>
+                    <p class="text-muted">Detalles técnicos y recursos para desarrolladores</p>
+                </div>
+                <a href="/" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Volver al Inicio
+                </a>
+            </div>
+
+            <!-- Technical Resources -->
+            <div class="row mb-4">
+                <div class="col-md-6 mb-3">
+                    <div class="card h-100">
+                        <div class="card-body text-center">
+                            <i class="bi bi-code-slash display-4 text-info mb-3"></i>
+                            <h5 class="card-title">Documentación API</h5>
+                            <p class="card-text">Accede a la documentación completa de la API REST para integración con sistemas externos.</p>
+                            <a href="/api/docs" class="btn btn-info" target="_blank">
+                                <i class="bi bi-book"></i> Ver Documentación
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <div class="card h-100">
+                        <div class="card-body text-center">
+                            <i class="bi bi-heart-pulse display-4 text-success mb-3"></i>
+                            <h5 class="card-title">Estado del Sistema</h5>
+                            <p class="card-text">Verifica el estado de salud de la aplicación y sus servicios.</p>
+                            <a href="/health" class="btn btn-success" target="_blank">
+                                <i class="bi bi-activity"></i> Health Check
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Features Section -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="bi bi-gear"></i> Características Técnicas</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <div class="text-center">
+                                        <i class="bi bi-qr-code display-6 text-primary mb-2"></i>
+                                        <h6>Generación de QR</h6>
+                                        <small class="text-muted">Códigos QR automáticos para identificación de equipos</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <div class="text-center">
+                                        <i class="bi bi-file-earmark-pdf display-6 text-danger mb-2"></i>
+                                        <h6>Reportes PDF</h6>
+                                        <small class="text-muted">Generación automática de reportes en formato PDF</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <div class="text-center">
+                                        <i class="bi bi-shield-check display-6 text-success mb-2"></i>
+                                        <h6>Multi-tenant</h6>
+                                        <small class="text-muted">Arquitectura segura para múltiples empresas</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Version Info -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="bi bi-info"></i> Información del Sistema</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <strong>Versión:</strong> 1.0.0<br>
+                                    <strong>Framework:</strong> FastAPI + Jinja2<br>
+                                    <strong>Base de Datos:</strong> PostgreSQL
+                                </div>
+                                <div class="col-md-6">
+                                    <strong>Cache:</strong> Redis<br>
+                                    <strong>Autenticación:</strong> JWT + Sessions<br>
+                                    <strong>Arquitectura:</strong> Multi-tenant
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block title %}Editar Usuario - {{ user.full_name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h3 class="card-title">Editar Usuario</h3>
+                    <a href="/admin/users/{{ user.id }}" class="btn btn-secondary btn-sm">
+                        <i class="fas fa-arrow-left"></i> Cancelar
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if error %}
+                    <div class="alert alert-danger" role="alert">
+                        {{ error }}
+                    </div>
+                    {% endif %}
+                    
+                    <form method="post" action="/admin/users/{{ user.id }}/edit">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="full_name">Nombre Completo *</label>
+                                    <input type="text" class="form-control" id="full_name" name="full_name" 
+                                           value="{{ user.full_name }}" required>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="email">Email *</label>
+                                    <input type="email" class="form-control" id="email" name="email" 
+                                           value="{{ user.email }}" required>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="role">Rol *</label>
+                                    <select class="form-control" id="role" name="role" required>
+                                        {% for role in user_roles %}
+                                        <option value="{{ role.value }}" 
+                                                {% if user.role == role %}selected{% endif %}>
+                                            {{ role.value }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="company_id">Empresa</label>
+                                    <select class="form-control" id="company_id" name="company_id">
+                                        <option value="">Sin empresa</option>
+                                        {% for company in companies %}
+                                        <option value="{{ company.id }}" 
+                                                {% if user.company_id == company.id %}selected{% endif %}>
+                                            {{ company.name }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="password">Nueva Contraseña</label>
+                                    <input type="password" class="form-control" id="password" name="password" 
+                                           placeholder="Dejar en blanco para mantener la actual">
+                                    <small class="form-text text-muted">
+                                        Solo complete este campo si desea cambiar la contraseña
+                                    </small>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <div class="form-check">
+                                        <input type="checkbox" class="form-check-input" id="is_active" 
+                                               name="is_active" value="true" 
+                                               {% if user.is_active %}checked{% endif %}>
+                                        <label class="form-check-label" for="is_active">
+                                            Usuario Activo
+                                        </label>
+                                    </div>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <h6>Información del Sistema</h6>
+                                    <p><strong>Creado:</strong> {{ user.created_at.strftime('%d/%m/%Y %H:%M') if user.created_at else 'N/A' }}</p>
+                                    <p><strong>Actualizado:</strong> {{ user.updated_at.strftime('%d/%m/%Y %H:%M') if user.updated_at else 'N/A' }}</p>
+                                    <p><strong>Último Login:</strong> {{ user.last_login.strftime('%d/%m/%Y %H:%M') if user.last_login else 'Nunca' }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-12">
+                                <hr>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save"></i> Guardar Cambios
+                                </button>
+                                <a href="/admin/users/{{ user.id }}" class="btn btn-secondary">
+                                    <i class="fas fa-times"></i> Cancelar
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Validación del formulario
+document.querySelector('form').addEventListener('submit', function(e) {
+    const password = document.getElementById('password').value;
+    
+    if (password && password.length < 6) {
+        e.preventDefault();
+        alert('La contraseña debe tener al menos 6 caracteres');
+        return false;
+    }
+});
+</script>
+{% endblock %}

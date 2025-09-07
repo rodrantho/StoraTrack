@@ -2,16 +2,37 @@
 
 {% block title %}Gestión de Usuarios{% endblock %}
 
-{% block page_header %}
-<div class="d-flex justify-content-between align-items-center">
-    <h1><i class="bi bi-people"></i> Gestión de Usuarios</h1>
-    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createUserModal">
-        <i class="bi bi-person-plus"></i> Nuevo Usuario
-    </button>
-</div>
+{% block breadcrumbs %}
+<nav aria-label="breadcrumb" class="pt-3">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item">
+            <a href="/admin/dashboard"><i class="bi bi-house"></i> Dashboard</a>
+        </li>
+        <li class="breadcrumb-item active" aria-current="page">
+            <i class="bi bi-people"></i> Usuarios
+        </li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block page_title %}Gestión de Usuarios{% endblock %}
+
+{% block header_actions %}
+<button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createUserModal">
+    <i class="bi bi-person-plus"></i> Nuevo Usuario
+</button>
 {% endblock %}
 
 {% block content %}
+{% if error %}
+<div class="alert alert-danger alert-dismissible fade show" role="alert">
+    {{ error }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+{% endif %}
+
+
+
 <div class="row">
     <div class="col-12">
         <!-- Filtros -->
@@ -100,13 +121,34 @@
                                 </td>
                                 <td>
                                     {% set role_colors = {
-                                        'SUPERADMIN': 'danger',
-                                        'STAFF': 'warning',
-                                        'CLIENT_USER': 'info'
+                                        'superadmin': 'danger',
+                                        'staff': 'warning',
+                                        'client_user': 'info'
                                     } %}
-                                    <span class="badge bg-{{ role_colors.get(user.role.value, 'secondary') }}">
-                                        {{ user.role.value.replace('_', ' ').title() }}
-                                    </span>
+                                    <div class="d-flex align-items-center">
+                                        <span class="badge bg-{{ role_colors.get(user.role.value, 'secondary') }} me-2">
+                                            {{ user.role.value.replace('_', ' ').title() }}
+                                        </span>
+                                        {% if (current_user.role.value == 'superadmin' or current_user.role.value == 'staff') and user.id != current_user.id and not (current_user.role.value == 'staff' and user.role.value == 'superadmin') %}
+                         <div class="dropdown">
+                             <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" 
+                                     data-bs-toggle="dropdown" aria-expanded="false" title="Cambiar rol">
+                                 <i class="bi bi-gear"></i>
+                             </button>
+                             <ul class="dropdown-menu">
+                                 {% if user.role.value != 'superadmin' and current_user.role.value == 'superadmin' %}
+                                 <li><a class="dropdown-item" href="#" onclick="changeUserRole({{ user.id }}, 'superadmin')">Superadmin</a></li>
+                                 {% endif %}
+                                 {% if user.role.value != 'staff' %}
+                                 <li><a class="dropdown-item" href="#" onclick="changeUserRole({{ user.id }}, 'staff')">Staff</a></li>
+                                 {% endif %}
+                                 {% if user.role.value != 'client_user' %}
+                                                <li><a class="dropdown-item" href="#" onclick="changeUserRole({{ user.id }}, 'client_user')">Cliente</a></li>
+                                                {% endif %}
+                                            </ul>
+                                        </div>
+                                        {% endif %}
+                                    </div>
                                 </td>
                                 <td>
                                     {% if user.company %}
@@ -140,17 +182,25 @@
                                                 onclick="viewUser({{ user.id }})" title="Ver detalles">
                                             <i class="bi bi-eye"></i>
                                         </button>
+                                        {% if current_user.role.value == 'staff' and user.role.value == 'superadmin' %}
+                                        <!-- Staff no puede editar super admins -->
+                                        {% else %}
                                         <button class="btn btn-outline-warning" 
                                                 onclick="editUser({{ user.id }})" title="Editar">
                                             <i class="bi bi-pencil"></i>
                                         </button>
-                                        {% if user.id != current_user.id and current_user.role.value == 'SUPERADMIN' %}
-                                        <button class="btn btn-outline-danger" 
-                                                onclick="confirmDeleteUser('{{ user.full_name or user.email }}', {{ user.id }})"
-                                                title="Eliminar">
-                                            <i class="bi bi-trash"></i>
-                                        </button>
                                         {% endif %}
+                                        {% if user.id != current_user.id and (current_user.role.value == 'superadmin' or current_user.role.value == 'staff') %}
+                            {% if current_user.role.value == 'staff' and (user.role.value == 'staff' or user.role.value == 'superadmin') %}
+                                <!-- Staff no puede eliminar otros staff o super admins -->
+                            {% else %}
+                        <button class="btn btn-outline-danger" 
+                                onclick="confirmDeleteUser('{{ user.full_name or user.email }}', {{ user.id }})"
+                                title="Eliminar">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                            {% endif %}
+                        {% endif %}
                                         {% if user.is_active %}
                                         <button class="btn btn-outline-secondary" 
                                                 onclick="toggleUserStatus({{ user.id }}, false)" title="Desactivar">
@@ -174,7 +224,7 @@
                     <i class="bi bi-people text-muted" style="font-size: 3rem;"></i>
                     <h5 class="text-muted mt-3">No hay usuarios registrados</h5>
                     <p class="text-muted">Comienza creando tu primer usuario</p>
-                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createUserModal">
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createUserModal">
                         <i class="bi bi-person-plus"></i> Nuevo Usuario
                     </button>
                 </div>
@@ -192,7 +242,7 @@
                 <h5 class="modal-title"><i class="bi bi-person-plus"></i> Nuevo Usuario</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <form method="post" action="{{ url_for('admin_user_create') }}">
+            <form method="post" action="/admin/users/create">
                 <div class="modal-body">
                     <div class="row g-3">
                         <div class="col-md-6">
@@ -213,19 +263,19 @@
                             <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
                         </div>
                         <div class="col-md-6">
-                            <label for="role" class="form-label">Rol *</label>
-                            <select class="form-select" id="role" name="role" required onchange="toggleCompanyField()">
+                            <label for="create_role" class="form-label">Rol *</label>
+                            <select class="form-select" id="create_role" name="role" required onchange="toggleCompanyField()">
                                 <option value="">Seleccionar rol...</option>
-                                {% if current_user.role.value == 'SUPERADMIN' %}
-                                <option value="SUPERADMIN">Superadmin</option>
+                                {% if current_user.role.value == 'superadmin' %}
+                                <option value="superadmin">Superadmin</option>
                                 {% endif %}
-                                <option value="STAFF">Staff</option>
-                                <option value="CLIENT_USER">Cliente</option>
+                                <option value="staff">Staff</option>
+                                <option value="client_user">Cliente</option>
                             </select>
                         </div>
                         <div class="col-md-6" id="companyField" style="display: none;">
-                            <label for="company_id" class="form-label">Empresa *</label>
-                            <select class="form-select" id="company_id" name="company_id">
+                            <label for="create_company_id" class="form-label">Empresa *</label>
+                            <select class="form-select" id="create_company_id" name="company_id">
                                 <option value="">Seleccionar empresa...</option>
                                 {% for company in companies %}
                                 <option value="{{ company.id }}">{{ company.name }}</option>
@@ -283,17 +333,19 @@
     font-weight: bold;
     font-size: 16px;
 }
+
+
 </style>
 {% endblock %}
 
-{% block extra_js %}
+{% block extra_scripts %}
 <script>
 function toggleCompanyField() {
-    const roleSelect = document.getElementById('role');
+    const roleSelect = document.getElementById('create_role');
     const companyField = document.getElementById('companyField');
-    const companySelect = document.getElementById('company_id');
+    const companySelect = document.getElementById('create_company_id');
     
-    if (roleSelect.value === 'CLIENT_USER') {
+    if (roleSelect.value === 'client_user') {
         companyField.style.display = 'block';
         companySelect.required = true;
     } else {
@@ -352,8 +404,7 @@ function viewUser(userId) {
 }
 
 function editUser(userId) {
-    // Implementar edición de usuario
-    showAlert('Función de edición en desarrollo', 'info');
+    window.location.href = `/admin/users/${userId}/edit`;
 }
 
 function confirmDeleteUser(userName, userId) {
@@ -405,6 +456,49 @@ function toggleUserStatus(userId, activate) {
     }
 }
 
+function changeUserRole(userId, newRole) {
+    if (confirm(`¿Estás seguro de que deseas cambiar el rol de este usuario a ${newRole}?`)) {
+        fetch(`/admin/users/${userId}/change-role`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ role: newRole })
+        })
+        .then(response => {
+            if (response.ok) {
+                showAlert('Rol de usuario cambiado exitosamente', 'success');
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                showAlert('Error al cambiar el rol del usuario', 'danger');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert('Error al cambiar el rol del usuario', 'danger');
+        });
+    }
+}
+
+function showAlert(message, type) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    const container = document.querySelector('.container-fluid');
+    container.insertBefore(alertDiv, container.firstChild);
+    
+    // Auto-dismiss after 5 seconds
+    setTimeout(() => {
+        alertDiv.remove();
+    }, 5000);
+}
+
+
+
 // Validación de contraseñas
 document.getElementById('confirm_password').addEventListener('input', function() {
     const password = document.getElementById('password').value;
@@ -416,5 +510,7 @@ document.getElementById('confirm_password').addEventListener('input', function()
         this.setCustomValidity('');
     }
 });
+
+// Modal and form functionality restored to default Bootstrap behavior
 </script>
 {% endblock %}

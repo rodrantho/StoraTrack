@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+
+{% block title %}Mi Perfil - StoraTrack{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-user"></i>
+                        Mi Perfil
+                    </h3>
+                </div>
+                <div class="card-body">
+                    {% if success %}
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        <i class="fas fa-check-circle"></i>
+                        {{ success }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                    {% endif %}
+                    
+                    {% if errors %}
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <ul class="mb-0">
+                            {% for error in errors %}
+                            <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                    {% endif %}
+                    
+                    <form method="post" action="/auth/profile">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5 class="card-title mb-0">
+                                            <i class="fas fa-user-edit"></i>
+                                            Información Personal
+                                        </h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="mb-3">
+                                            <label for="full_name" class="form-label">Nombre Completo</label>
+                                            <input type="text" class="form-control" id="full_name" name="full_name" 
+                                                   value="{{ full_name or current_user.full_name }}" required>
+                                        </div>
+                                        
+                                        <div class="mb-3">
+                                            <label for="email" class="form-label">Email</label>
+                                            <input type="email" class="form-control" id="email" name="email" 
+                                                   value="{{ email or current_user.email }}" required>
+                                        </div>
+                                        
+                                        <div class="mb-3">
+                                            <label class="form-label">Rol</label>
+                                            <input type="text" class="form-control" value="{{ current_user.role.value }}" readonly>
+                                        </div>
+                                        
+                                        {% if current_user.company %}
+                                        <div class="mb-3">
+                                            <label class="form-label">Empresa</label>
+                                            <input type="text" class="form-control" value="{{ current_user.company.name }}" readonly>
+                                        </div>
+                                        {% endif %}
+                                        
+                                        <div class="mb-3">
+                                            <label class="form-label">Último Acceso</label>
+                                            <input type="text" class="form-control" 
+                                                   value="{% if current_user.last_login %}{{ current_user.last_login.strftime('%d/%m/%Y %H:%M') }}{% else %}Nunca{% endif %}" readonly>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5 class="card-title mb-0">
+                                            <i class="fas fa-lock"></i>
+                                            Cambiar Contraseña
+                                        </h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="alert alert-info">
+                                            <i class="fas fa-info-circle"></i>
+                                            Deje estos campos vacíos si no desea cambiar su contraseña.
+                                        </div>
+                                        
+                                        <div class="mb-3">
+                                            <label for="current_password" class="form-label">Contraseña Actual</label>
+                                            <input type="password" class="form-control" id="current_password" name="current_password">
+                                        </div>
+                                        
+                                        <div class="mb-3">
+                                            <label for="new_password" class="form-label">Nueva Contraseña</label>
+                                            <input type="password" class="form-control" id="new_password" name="new_password">
+                                            <div class="form-text">Mínimo 6 caracteres</div>
+                                        </div>
+                                        
+                                        <div class="mb-3">
+                                            <label for="confirm_password" class="form-label">Confirmar Nueva Contraseña</label>
+                                            <input type="password" class="form-control" id="confirm_password" name="confirm_password">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <div class="d-flex justify-content-between">
+                                    <a href="/" class="btn btn-secondary">
+                                        <i class="fas fa-arrow-left"></i>
+                                        Volver
+                                    </a>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-save"></i>
+                                        Guardar Cambios
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Validación del lado del cliente
+document.addEventListener('DOMContentLoaded', function() {
+    const newPassword = document.getElementById('new_password');
+    const confirmPassword = document.getElementById('confirm_password');
+    const currentPassword = document.getElementById('current_password');
+    
+    function validatePasswords() {
+        if (newPassword.value || confirmPassword.value) {
+            if (!currentPassword.value) {
+                currentPassword.setCustomValidity('Debe proporcionar la contraseña actual');
+            } else {
+                currentPassword.setCustomValidity('');
+            }
+            
+            if (newPassword.value.length < 6) {
+                newPassword.setCustomValidity('La contraseña debe tener al menos 6 caracteres');
+            } else {
+                newPassword.setCustomValidity('');
+            }
+            
+            if (newPassword.value !== confirmPassword.value) {
+                confirmPassword.setCustomValidity('Las contraseñas no coinciden');
+            } else {
+                confirmPassword.setCustomValidity('');
+            }
+        } else {
+            currentPassword.setCustomValidity('');
+            newPassword.setCustomValidity('');
+            confirmPassword.setCustomValidity('');
+        }
+    }
+    
+    newPassword.addEventListener('input', validatePasswords);
+    confirmPassword.addEventListener('input', validatePasswords);
+    currentPassword.addEventListener('input', validatePasswords);
+});
+</script>
+{% endblock %}

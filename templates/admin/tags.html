@@ -18,14 +18,14 @@
         <form method="GET" class="row g-3">
             <div class="col-md-4">
                 <label class="form-label">Buscar</label>
-                <input type="text" class="form-control" name="search" value="{{ request.args.get('search', '') }}" placeholder="Nombre, descripción...">
+                <input type="text" class="form-control" name="search" value="{{ request.query_params.get('search', '') }}" placeholder="Nombre, descripción...">
             </div>
             <div class="col-md-3">
                 <label class="form-label">Empresa</label>
                 <select class="form-select" name="company">
                     <option value="">Todas</option>
                     {% for company in companies %}
-                    <option value="{{ company.id }}" {{ 'selected' if request.args.get('company') == company.id|string }}>{{ company.name }}</option>
+                    <option value="{{ company.id }}" {{ 'selected' if request.query_params.get('company') == company.id|string }}>{{ company.name }}</option>
                     {% endfor %}
                 </select>
             </div>
@@ -33,13 +33,13 @@
                 <label class="form-label">Color</label>
                 <select class="form-select" name="color">
                     <option value="">Todos</option>
-                    <option value="primary" {{ 'selected' if request.args.get('color') == 'primary' }}>🔵 Azul</option>
-                    <option value="success" {{ 'selected' if request.args.get('color') == 'success' }}>🟢 Verde</option>
-                    <option value="warning" {{ 'selected' if request.args.get('color') == 'warning' }}>🟡 Amarillo</option>
-                    <option value="danger" {{ 'selected' if request.args.get('color') == 'danger' }}>🔴 Rojo</option>
-                    <option value="info" {{ 'selected' if request.args.get('color') == 'info' }}>🔵 Celeste</option>
-                    <option value="secondary" {{ 'selected' if request.args.get('color') == 'secondary' }}>⚫ Gris</option>
-                    <option value="dark" {{ 'selected' if request.args.get('color') == 'dark' }}>⚫ Negro</option>
+                    <option value="primary" {{ 'selected' if request.query_params.get('color') == 'primary' }}>🔵 Azul</option>
+                    <option value="success" {{ 'selected' if request.query_params.get('color') == 'success' }}>🟢 Verde</option>
+                    <option value="warning" {{ 'selected' if request.query_params.get('color') == 'warning' }}>🟡 Amarillo</option>
+                    <option value="danger" {{ 'selected' if request.query_params.get('color') == 'danger' }}>🔴 Rojo</option>
+                    <option value="info" {{ 'selected' if request.query_params.get('color') == 'info' }}>🔵 Celeste</option>
+                    <option value="secondary" {{ 'selected' if request.query_params.get('color') == 'secondary' }}>⚫ Gris</option>
+                    <option value="dark" {{ 'selected' if request.query_params.get('color') == 'dark' }}>⚫ Negro</option>
                 </select>
             </div>
             <div class="col-md-2">
@@ -374,72 +374,27 @@ document.getElementById('colorSelect').addEventListener('change', function() {
     }
 });
 
-// Crear tag
-document.getElementById('createTagForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    
-    const formData = new FormData(this);
-    const data = Object.fromEntries(formData.entries());
-    
-    // Convertir checkbox
-    data.is_active = formData.has('is_active');
-    
-    fetch('/admin/tags', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data)
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            showAlert('Tag creado exitosamente', 'success');
-            bootstrap.Modal.getInstance(document.getElementById('createTagModal')).hide();
-            location.reload();
-        } else {
-            showAlert(data.message || 'Error al crear el tag', 'danger');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        showAlert('Error al crear el tag', 'danger');
-    });
+// Crear tag usando el manejador estandarizado
+new FormHandler('createTagForm', {
+    url: '/admin/tags',
+    method: 'POST',
+    useFormData: false, // Usar JSON
+    successMessage: 'Tag creado exitosamente',
+    errorMessage: 'Error al crear el tag'
 });
 
-// Editar tag
-document.getElementById('editTagForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    
-    if (!currentTagId) return;
-    
-    const formData = new FormData(this);
-    const data = Object.fromEntries(formData.entries());
-    
-    // Convertir checkbox
-    data.is_active = formData.has('is_active');
-    
-    fetch(`/admin/tags/${currentTagId}`, {
-        method: 'PUT',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data)
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            showAlert('Tag actualizado exitosamente', 'success');
-            bootstrap.Modal.getInstance(document.getElementById('editTagModal')).hide();
-            location.reload();
-        } else {
-            showAlert(data.message || 'Error al actualizar el tag', 'danger');
+// Editar tag usando el manejador estandarizado
+new FormHandler('editTagForm', {
+    url: () => `/admin/tags/${currentTagId}`,
+    method: 'PUT',
+    useFormData: false, // Usar JSON
+    successMessage: 'Tag actualizado exitosamente',
+    errorMessage: 'Error al actualizar el tag',
+    onSubmit: function() {
+        if (!currentTagId) {
+            throw new Error('No se ha seleccionado un tag');
         }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        showAlert('Error al actualizar el tag', 'danger');
-    });
+    }
 });
 
 function toggleView(viewType) {

@@ -2,9 +2,7 @@ from datetime import datetime, date
 from typing import Dict, Any, Optional
 from decimal import Decimal, ROUND_HALF_UP
 from sqlalchemy.orm import Session
-from ..models.device import Device
-from ..models.company import Company
-from ..models.movement import Movement
+from ..models import Device, Company, DeviceMovement
 
 class CostCalculator:
     """Servicio para calcular costos de almacenamiento de equipos"""
@@ -83,11 +81,11 @@ class CostCalculator:
             device_entry = device.entry_date.date() if hasattr(device.entry_date, 'date') else device.entry_date
             
             # Verificar si fue retirado antes del mes
-            last_movement = self.db.query(Movement).filter(
-                Movement.device_id == device.id,
-                Movement.new_status == 'RETIRADO',
-                Movement.created_at <= end_date
-            ).order_by(Movement.created_at.desc()).first()
+            last_movement = self.db.query(DeviceMovement).filter(
+                DeviceMovement.device_id == device.id,
+                DeviceMovement.to_status == 'RETIRADO',
+                DeviceMovement.created_at <= end_date
+            ).order_by(DeviceMovement.created_at.desc()).first()
             
             if last_movement:
                 retirement_date = last_movement.created_at.date()
@@ -123,11 +121,11 @@ class CostCalculator:
         actual_end = end_date
         
         # Verificar si fue retirado durante el período
-        last_movement = self.db.query(Movement).filter(
-            Movement.device_id == device.id,
-            Movement.new_status == 'RETIRADO',
-            Movement.created_at <= end_date
-        ).order_by(Movement.created_at.desc()).first()
+        last_movement = self.db.query(DeviceMovement).filter(
+            DeviceMovement.device_id == device.id,
+            DeviceMovement.to_status == 'RETIRADO',
+            DeviceMovement.created_at <= end_date
+        ).order_by(DeviceMovement.created_at.desc()).first()
         
         if last_movement:
             retirement_date = last_movement.created_at.date()
@@ -239,7 +237,7 @@ class CostCalculator:
         
         breakdown = {
             'INGRESADO': {'count': 0, 'total_cost': 0},
-            'ESPERANDO_A_RECIBIR': {'count': 0, 'total_cost': 0},
+            'ESPERANDO_RECIBIR': {'count': 0, 'total_cost': 0},
             'ALMACENADO': {'count': 0, 'total_cost': 0},
             'ENVIADO': {'count': 0, 'total_cost': 0},
             'RETIRADO': {'count': 0, 'total_cost': 0}

@@ -17,7 +17,7 @@
         <a href="{{ url_for('admin_company_edit', company_id=company.id) }}" class="btn btn-warning">
             <i class="bi bi-pencil"></i> Editar
         </a>
-        {% if current_user.role.value == 'SUPERADMIN' %}
+        {% if current_user.role.value == 'superadmin' %}
         <button class="btn btn-danger" 
                 onclick="confirmDelete('{{ company.name }}', '{{ url_for('admin_company_delete', company_id=company.id) }}')">
             <i class="bi bi-trash"></i> Eliminar
@@ -203,25 +203,25 @@
                 <div class="row g-3 text-center">
                     <div class="col-6">
                         <div class="border rounded p-3">
-                            <h4 class="text-primary mb-1">{{ stats.total_devices }}</h4>
+                            <h4 class="text-primary mb-1">{{ total_devices }}</h4>
                             <small class="text-muted">Total Equipos</small>
                         </div>
                     </div>
                     <div class="col-6">
                         <div class="border rounded p-3">
-                            <h4 class="text-success mb-1">{{ stats.active_devices }}</h4>
+                            <h4 class="text-success mb-1">{{ total_devices }}</h4>
                             <small class="text-muted">Almacenados</small>
                         </div>
                     </div>
                     <div class="col-6">
                         <div class="border rounded p-3">
-                            <h4 class="text-info mb-1">{{ stats.total_users }}</h4>
+                            <h4 class="text-info mb-1">{{ total_users }}</h4>
                             <small class="text-muted">Usuarios</small>
                         </div>
                     </div>
                     <div class="col-6">
                         <div class="border rounded p-3">
-                            <h4 class="text-warning mb-1">{{ stats.total_locations }}</h4>
+                            <h4 class="text-warning mb-1">0</h4>
                             <small class="text-muted">Ubicaciones</small>
                         </div>
                     </div>
@@ -230,7 +230,7 @@
                 <hr>
                 
                 <div class="text-center">
-                    <h5 class="text-success mb-1">${{ "%.2f"|format(stats.monthly_revenue) }} {{ company.currency }}</h5>
+                    <h5 class="text-success mb-1">$0.00 {{ company.currency }}</h5>
                     <small class="text-muted">Ingresos del mes</small>
                 </div>
             </div>

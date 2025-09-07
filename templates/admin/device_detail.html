@@ -25,7 +25,7 @@
         <a href="/admin/devices/{{ device.id }}/edit" class="btn btn-warning">
             <i class="bi bi-pencil"></i> Editar
         </a>
-        {% if current_user.role == 'SUPERADMIN' %}
+        {% if current_user.role in ['SUPERADMIN', 'STAFF'] %}
         <button class="btn btn-danger" onclick="confirmDeleteDevice({{ device.id }}, '{{ device.name }}')">
             <i class="bi bi-trash"></i> Eliminar
         </button>
@@ -453,33 +453,12 @@
 let currentQRData = null;
 
 // Agregar movimiento
-document.getElementById('addMovementForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    
-    const formData = new FormData(this);
-    const data = Object.fromEntries(formData.entries());
-    
-    fetch(`/admin/devices/{{ device.id }}/movements`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data)
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            showAlert('Movimiento agregado exitosamente', 'success');
-            bootstrap.Modal.getInstance(document.getElementById('addMovementModal')).hide();
-            location.reload();
-        } else {
-            showAlert(data.message || 'Error al agregar el movimiento', 'danger');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        showAlert('Error al agregar el movimiento', 'danger');
-    });
+new FormHandler('addMovementForm', {
+    url: `/admin/devices/{{ device.id }}/movements`,
+    method: 'POST',
+    useFormData: false,
+    successMessage: 'Movimiento agregado exitosamente',
+    errorMessage: 'Error al agregar el movimiento'
 });
 
 function calculateCost() {

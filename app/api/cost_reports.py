@@ -5,12 +5,10 @@ from typing import Optional
 from datetime import date, datetime
 import io
 from ..database import get_db
-from ..models.device import Device
-from ..models.company import Company
+from ..models import Device, Company, User
 from ..services.cost_calculator import CostCalculator
 from ..services.report_generator import ReportGenerator
-from ..auth.dependencies import get_current_user, require_roles
-from ..models.user import User
+from ..auth import get_current_user, require_role
 
 router = APIRouter(prefix="/api/cost-reports", tags=["cost-reports"])
 
@@ -277,7 +275,7 @@ async def export_devices_list(
     company_id: Optional[int] = None,
     status: Optional[str] = None,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_roles(["superadmin", "staff"]))
+    current_user: User = Depends(require_role(["superadmin", "staff"]))
 ):
     """Exporta lista de dispositivos con costos (solo admin)"""
     

@@ -1,0 +1,219 @@
+/**
+ * Estilos para estados de carga - StoraTrack
+ * Mejora la experiencia del usuario durante operaciones asíncronas
+ */
+
+/* Estilos para botones en estado de carga */
+.btn.loading {
+    position: relative;
+    pointer-events: none;
+    opacity: 0.8;
+}
+
+.btn.loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 16px;
+    height: 16px;
+    margin: -8px 0 0 -8px;
+    border: 2px solid transparent;
+    border-top: 2px solid currentColor;
+    border-radius: 50%;
+    animation: btn-loading-spin 1s linear infinite;
+}
+
+@keyframes btn-loading-spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Overlay de carga para formularios */
+.form-loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    border-radius: inherit;
+}
+
+.form-loading-overlay .spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #007bff;
+    border-radius: 50%;
+    animation: form-loading-spin 1s linear infinite;
+}
+
+@keyframes form-loading-spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Estados de carga para inputs */
+.form-control.loading {
+    background-image: url('data:image/svg+xml;charset=utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%23007bff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 11-6.219-8.56"/></svg>');
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 16px;
+    animation: input-loading-spin 1s linear infinite;
+}
+
+@keyframes input-loading-spin {
+    0% { background-position: right 12px center; }
+    100% { background-position: right 12px center; }
+}
+
+/* Skeleton loading para tablas */
+.skeleton {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: skeleton-loading 1.5s infinite;
+}
+
+@keyframes skeleton-loading {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+.skeleton-text {
+    height: 1em;
+    margin: 0.5em 0;
+    border-radius: 4px;
+}
+
+.skeleton-text.short {
+    width: 60%;
+}
+
+.skeleton-text.medium {
+    width: 80%;
+}
+
+.skeleton-text.long {
+    width: 100%;
+}
+
+/* Estados de carga para cards */
+.card.loading {
+    position: relative;
+    overflow: hidden;
+}
+
+.card.loading::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+    animation: card-shimmer 1.5s infinite;
+    z-index: 1;
+}
+
+@keyframes card-shimmer {
+    0% { left: -100%; }
+    100% { left: 100%; }
+}
+
+/* Estados de carga para modales */
+.modal.loading .modal-content {
+    position: relative;
+}
+
+.modal.loading .modal-content::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1060;
+}
+
+/* Pulse loading para elementos */
+.pulse-loading {
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+
+/* Estados de carga para listas */
+.list-loading {
+    padding: 2rem;
+    text-align: center;
+    color: #6c757d;
+}
+
+.list-loading .spinner-border {
+    margin-bottom: 1rem;
+}
+
+/* Mejoras de accesibilidad */
+.loading[aria-busy="true"] {
+    cursor: wait;
+}
+
+/* Estados de carga para botones específicos */
+.btn-primary.loading {
+    background-color: #0056b3;
+    border-color: #004085;
+}
+
+.btn-success.loading {
+    background-color: #157347;
+    border-color: #146c43;
+}
+
+.btn-danger.loading {
+    background-color: #bb2d3b;
+    border-color: #b02a37;
+}
+
+/* Responsive adjustments */
+@media (max-width: 576px) {
+    .form-loading-overlay .spinner {
+        width: 30px;
+        height: 30px;
+        border-width: 3px;
+    }
+    
+    .btn.loading::after {
+        width: 14px;
+        height: 14px;
+        margin: -7px 0 0 -7px;
+    }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    .form-loading-overlay {
+        background: rgba(33, 37, 41, 0.8);
+    }
+    
+    .skeleton {
+        background: linear-gradient(90deg, #2d3748 25%, #4a5568 50%, #2d3748 75%);
+        background-size: 200% 100%;
+    }
+    
+    .list-loading {
+        color: #adb5bd;
+    }
+}

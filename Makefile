@@ -260,7 +260,7 @@ setup:
 	@$(MAKE) db-seed
 	@echo "$(GREEN)✅ Configuración completa!$(RESET)"
 	@echo "$(YELLOW)Aplicación disponible en: http://localhost:8000$(RESET)"
-	@echo "$(YELLOW)Credenciales: admin@storatrack.com / admin123$(RESET)"
+	@echo "$(YELLOW)Utiliza las credenciales configuradas durante la inicialización$(RESET)"
 
 # Desinstalación
 teardown:

@@ -2,9 +2,27 @@
 
 {% block title %}Gestión de Empresas{% endblock %}
 
+{% block breadcrumbs %}
+<nav aria-label="breadcrumb" class="pt-3">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item">
+            <a href="/admin/dashboard"><i class="bi bi-house"></i> Dashboard</a>
+        </li>
+        <li class="breadcrumb-item active" aria-current="page">
+            <i class="bi bi-building"></i> Empresas
+        </li>
+    </ol>
+</nav>
+{% endblock %}
+
 {% block page_header %}
 <div class="d-flex justify-content-between align-items-center">
-    <h1><i class="bi bi-building"></i> Gestión de Empresas</h1>
+    <div>
+        <a href="/admin/dashboard" class="btn btn-outline-secondary me-2">
+            <i class="bi bi-arrow-left"></i> Volver al Dashboard
+        </a>
+        <h1 class="d-inline"><i class="bi bi-building"></i> Gestión de Empresas</h1>
+    </div>
     <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createCompanyModal">
         <i class="bi bi-plus-circle"></i> Nueva Empresa
     </button>
@@ -115,7 +133,7 @@
                                            class="btn btn-outline-warning" title="Editar">
                                             <i class="bi bi-pencil"></i>
                                         </a>
-                                        {% if current_user.role.value == 'SUPERADMIN' %}
+                                        {% if current_user and current_user.role and current_user.role.value in ['superadmin', 'staff'] %}
                                         <button class="btn btn-outline-danger" 
                                                 onclick="confirmDelete('{{ company.name }}', '{{ url_for('admin_company_delete', company_id=company.id) }}')"
                                                 title="Eliminar">
@@ -229,16 +247,12 @@
 <script>
 function confirmDelete(companyName, deleteUrl) {
     if (confirm(`¿Estás seguro de que deseas eliminar la empresa "${companyName}"?\n\nEsta acción no se puede deshacer y eliminará todos los datos asociados.`)) {
-        // Crear formulario para enviar DELETE
+        // Crear formulario para enviar POST directamente
         const form = document.createElement('form');
         form.method = 'POST';
         form.action = deleteUrl;
         
-        const methodInput = document.createElement('input');
-        methodInput.type = 'hidden';
-        methodInput.name = '_method';
-        methodInput.value = 'DELETE';
-        form.appendChild(methodInput);
+        // No es necesario el campo _method ya que la ruta está configurada como POST
         
         document.body.appendChild(form);
         form.submit();

@@ -1,6 +1,7 @@
 import os
-from typing import Optional
-from pydantic import BaseSettings
+import time
+from typing import Optional, List
+from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     # App settings
@@ -10,10 +11,10 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 30
     
     # Database
-    database_url: str = os.getenv("DATABASE_URL", "sqlite:///./storatrack.db")
+    database_url: str = os.getenv("DATABASE_URL", "sqlite:///./database/storatrack.db")
     
     # Timezone and locale
-    timezone: str = os.getenv("TIMEZONE", "America/Montevideo")
+    timezone: str = os.getenv("TIMEZONE", time.tzname[0] if time.daylight == 0 else time.tzname[1])
     date_format: str = "%d/%m/%Y"
     datetime_format: str = "%d/%m/%Y %H:%M"
     
@@ -30,7 +31,10 @@ class Settings(BaseSettings):
     # File uploads
     upload_dir: str = "uploads"
     max_file_size: int = 5 * 1024 * 1024  # 5MB
-    allowed_extensions: list = [".jpg", ".jpeg", ".png", ".pdf"]
+    allowed_extensions: str = "pdf,jpg,jpeg,png,gif,doc,docx,xls,xlsx"
+    
+    def get_allowed_extensions(self) -> List[str]:
+        return [ext.strip() for ext in self.allowed_extensions.split(',')]
     
     # Pagination
     default_page_size: int = 20
@@ -45,5 +49,6 @@ class Settings(BaseSettings):
     class Config:
         env_file = ".env"
         case_sensitive = False
+        extra = "ignore"
 
 settings = Settings()

@@ -2,6 +2,19 @@
 
 {% block title %}Gestión de Equipos{% endblock %}
 
+{% block breadcrumbs %}
+<nav aria-label="breadcrumb" class="pt-3">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item">
+            <a href="/admin/dashboard"><i class="bi bi-house"></i> Dashboard</a>
+        </li>
+        <li class="breadcrumb-item active" aria-current="page">
+            <i class="bi bi-laptop"></i> Equipos
+        </li>
+    </ol>
+</nav>
+{% endblock %}
+
 {% block page_header %}
 <div class="d-flex justify-content-between align-items-center">
     <h1><i class="bi bi-laptop"></i> Gestión de Equipos</h1>
@@ -18,17 +31,17 @@
         <form method="GET" class="row g-3">
             <div class="col-md-3">
                 <label class="form-label">Buscar</label>
-                <input type="text" class="form-control" name="search" value="{{ request.args.get('search', '') }}" placeholder="Nombre, serie, marca...">
+                <input type="text" class="form-control" name="search" value="{{ request.query_params.get('search', '') }}" placeholder="Nombre, serie, marca...">
             </div>
             <div class="col-md-2">
                 <label class="form-label">Estado</label>
                 <select class="form-select" name="status">
                     <option value="">Todos</option>
-                    <option value="INGRESADO" {{ 'selected' if request.args.get('status') == 'INGRESADO' }}>Ingresado</option>
-                    <option value="ESPERANDO_A_RECIBIR" {{ 'selected' if request.args.get('status') == 'ESPERANDO_A_RECIBIR' }}>Esperando a recibir</option>
-                    <option value="ALMACENADO" {{ 'selected' if request.args.get('status') == 'ALMACENADO' }}>Almacenado</option>
-                    <option value="ENVIADO" {{ 'selected' if request.args.get('status') == 'ENVIADO' }}>Enviado</option>
-                    <option value="RETIRADO" {{ 'selected' if request.args.get('status') == 'RETIRADO' }}>Retirado</option>
+                    <option value="INGRESADO" {{ 'selected' if request.query_params.get('status') == 'INGRESADO' }}>Ingresado</option>
+                    <option value="ESPERANDO_A_RECIBIR" {{ 'selected' if request.query_params.get('status') == 'ESPERANDO_A_RECIBIR' }}>Esperando a recibir</option>
+                    <option value="ALMACENADO" {{ 'selected' if request.query_params.get('status') == 'ALMACENADO' }}>Almacenado</option>
+                    <option value="ENVIADO" {{ 'selected' if request.query_params.get('status') == 'ENVIADO' }}>Enviado</option>
+                    <option value="RETIRADO" {{ 'selected' if request.query_params.get('status') == 'RETIRADO' }}>Retirado</option>
                 </select>
             </div>
             <div class="col-md-2">
@@ -36,7 +49,7 @@
                 <select class="form-select" name="company">
                     <option value="">Todas</option>
                     {% for company in companies %}
-                    <option value="{{ company.id }}" {{ 'selected' if request.args.get('company') == company.id|string }}>{{ company.name }}</option>
+                    <option value="{{ company.id }}" {{ 'selected' if request.query_params.get('company') == company.id|string }}>{{ company.name }}</option>
                     {% endfor %}
                 </select>
             </div>
@@ -45,17 +58,17 @@
                 <select class="form-select" name="location">
                     <option value="">Todas</option>
                     {% for location in locations %}
-                    <option value="{{ location.id }}" {{ 'selected' if request.args.get('location') == location.id|string }}>{{ location.name }}</option>
+                    <option value="{{ location.id }}" {{ 'selected' if request.query_params.get('location') == location.id|string }}>{{ location.name }}</option>
                     {% endfor %}
                 </select>
             </div>
             <div class="col-md-2">
                 <label class="form-label">Ordenar por</label>
                 <select class="form-select" name="sort">
-                    <option value="created_at" {{ 'selected' if request.args.get('sort') == 'created_at' }}>Fecha creación</option>
-                    <option value="name" {{ 'selected' if request.args.get('sort') == 'name' }}>Nombre</option>
-                    <option value="status" {{ 'selected' if request.args.get('sort') == 'status' }}>Estado</option>
-                    <option value="company" {{ 'selected' if request.args.get('sort') == 'company' }}>Empresa</option>
+                    <option value="created_at" {{ 'selected' if request.query_params.get('sort') == 'created_at' }}>Fecha creación</option>
+                    <option value="name" {{ 'selected' if request.query_params.get('sort') == 'name' }}>Nombre</option>
+                    <option value="status" {{ 'selected' if request.query_params.get('sort') == 'status' }}>Estado</option>
+                    <option value="company" {{ 'selected' if request.query_params.get('sort') == 'company' }}>Empresa</option>
                 </select>
             </div>
             <div class="col-md-1">
@@ -194,7 +207,7 @@
                             {% endif %}
                         </td>
                         <td>
-                            {% set days = (now() - device.fecha_ingreso).days + 1 %}
+                            {% set days = (now - device.fecha_ingreso).days + 1 %}
                             <strong>{{ days }}</strong>
                             <br><small class="text-muted">días</small>
                         </td>
@@ -236,7 +249,7 @@
                 <ul class="pagination justify-content-center mb-0">
                     {% if pagination.has_prev %}
                     <li class="page-item">
-                        <a class="page-link" href="{{ url_for('admin_devices', page=pagination.prev_num, **request.args) }}">
+                        <a class="page-link" href="{{ url_for('admin_devices', page=pagination.prev_num, **request.query_params) }}">
                             <i class="bi bi-chevron-left"></i>
                         </a>
                     </li>
@@ -246,7 +259,7 @@
                     {% if page_num %}
                     {% if page_num != pagination.page %}
                     <li class="page-item">
-                        <a class="page-link" href="{{ url_for('admin_devices', page=page_num, **request.args) }}">{{ page_num }}</a>
+                        <a class="page-link" href="{{ url_for('admin_devices', page=page_num, **request.query_params) }}">{{ page_num }}</a>
                     </li>
                     {% else %}
                     <li class="page-item active">
@@ -262,7 +275,7 @@
                     
                     {% if pagination.has_next %}
                     <li class="page-item">
-                        <a class="page-link" href="{{ url_for('admin_devices', page=pagination.next_num, **request.args) }}">
+                        <a class="page-link" href="{{ url_for('admin_devices', page=pagination.next_num, **request.query_params) }}">
                             <i class="bi bi-chevron-right"></i>
                         </a>
                     </li>
@@ -283,6 +296,9 @@
         {% endif %}
     </div>
 </div>
+
+<!-- Alert container -->
+<div id="alertContainer" class="position-fixed top-0 end-0 p-3" style="z-index: 1050;"></div>
 
 <!-- Modal Crear Equipo -->
 <div class="modal fade" id="createDeviceModal" tabindex="-1">
@@ -445,70 +461,27 @@
 <script>
 let currentDeviceId = null;
 
-// Crear equipo
-document.getElementById('createDeviceForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    
-    const formData = new FormData(this);
-    const data = Object.fromEntries(formData.entries());
-    
-    // Manejar tags múltiples
-    const tags = formData.getAll('tags');
-    data.tags = tags;
-    
-    fetch('/admin/devices', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data)
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            showAlert('Equipo creado exitosamente', 'success');
-            bootstrap.Modal.getInstance(document.getElementById('createDeviceModal')).hide();
-            location.reload();
-        } else {
-            showAlert(data.message || 'Error al crear el equipo', 'danger');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        showAlert('Error al crear el equipo', 'danger');
-    });
+// Crear equipo usando el manejador estandarizado
+new FormHandler('createDeviceForm', {
+    url: '/admin/devices',
+    method: 'POST',
+    useFormData: true,
+    successMessage: 'Equipo creado exitosamente',
+    errorMessage: 'Error al crear el equipo'
 });
 
-// Mover equipo
-document.getElementById('moveDeviceForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    
-    if (!currentDeviceId) return;
-    
-    const formData = new FormData(this);
-    const data = Object.fromEntries(formData.entries());
-    
-    fetch(`/admin/devices/${currentDeviceId}/move`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data)
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            showAlert('Equipo movido exitosamente', 'success');
-            bootstrap.Modal.getInstance(document.getElementById('moveDeviceModal')).hide();
-            location.reload();
-        } else {
-            showAlert(data.message || 'Error al mover el equipo', 'danger');
+// Mover equipo usando el manejador estandarizado
+new FormHandler('moveDeviceForm', {
+    url: () => `/admin/devices/${currentDeviceId}/move`,
+    method: 'POST',
+    useFormData: false, // Usar JSON para este formulario
+    successMessage: 'Equipo movido exitosamente',
+    errorMessage: 'Error al mover el equipo',
+    onSubmit: function() {
+        if (!currentDeviceId) {
+            throw new Error('No se ha seleccionado un dispositivo');
         }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        showAlert('Error al mover el equipo', 'danger');
-    });
+    }
 });
 
 function viewDevice(deviceId) {
@@ -547,6 +520,29 @@ function deleteDevice(deviceId) {
         console.error('Error:', error);
         showAlert('Error al eliminar el equipo', 'danger');
     });
+}
+
+function showAlert(message, type) {
+    const alertContainer = document.getElementById('alertContainer');
+    const alertId = 'alert-' + Date.now();
+    
+    const alertHtml = `
+        <div id="${alertId}" class="alert alert-${type} alert-dismissible fade show" role="alert">
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `;
+    
+    alertContainer.insertAdjacentHTML('beforeend', alertHtml);
+    
+    // Auto-dismiss after 5 seconds
+    setTimeout(() => {
+        const alert = document.getElementById(alertId);
+        if (alert) {
+            const bsAlert = new bootstrap.Alert(alert);
+            bsAlert.close();
+        }
+    }, 5000);
 }
 </script>
 {% endblock %}

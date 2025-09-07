@@ -9,6 +9,7 @@ from app.database import get_db
 from app.models import User, UserRole
 from app.schemas import TokenData
 from app.config import settings
+from app.utils.datetime_utils import now_local
 
 # Password hashing
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -28,9 +29,9 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     """Crear token JWT"""
     to_encode = data.copy()
     if expires_delta:
-        expire = datetime.utcnow() + expires_delta
+        expire = now_local() + expires_delta
     else:
-        expire = datetime.utcnow() + timedelta(minutes=settings.access_token_expire_minutes)
+        expire = now_local() + timedelta(minutes=settings.access_token_expire_minutes)
     
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, settings.secret_key, algorithm=settings.algorithm)
@@ -63,26 +64,44 @@ def get_current_user(request: Request, db: Session = Depends(get_db)):
     """Obtener usuario actual desde sesión o token"""
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="No se pudo validar las credenciales",
+        detail="Acceso denegado",
         headers={"WWW-Authenticate": "Bearer"},
     )
     
     # Primero intentar obtener desde sesión (para web)
     user_id = request.session.get("user_id")
     if user_id:
-        user = db.query(User).filter(User.id == user_id, User.is_active == True).first()
-        if user:
-            return user
+        try:
+            user = db.query(User).filter(User.id == user_id, User.is_active == True).first()
+            if user:
+                # Verificar que la sesión tenga todos los datos necesarios
+                if not request.session.get("user_email") or not request.session.get("user_role"):
+                    # Regenerar datos de sesión
+                    request.session["user_email"] = user.email
+                    request.session["user_role"] = user.role.value
+                    request.session["company_id"] = user.company_id
+                return user
+            else:
+                # Usuario no encontrado o inactivo, limpiar sesión
+                request.session.clear()
+        except Exception as e:
+            # Solo limpiar sesión si hay error de base de datos
+            print(f"Error al verificar usuario en sesión: {e}")
+            request.session.clear()
     
     # Si no hay sesión, intentar con token JWT (para API)
     authorization = request.headers.get("Authorization")
     if authorization and authorization.startswith("Bearer "):
-        token = authorization.split(" ")[1]
-        token_data = verify_token(token, credentials_exception)
-        user = db.query(User).filter(User.email == token_data.email, User.is_active == True).first()
-        if user is None:
-            raise credentials_exception
-        return user
+        try:
+            token = authorization.split(" ")[1]
+            token_data = verify_token(token, credentials_exception)
+            user = db.query(User).filter(User.email == token_data.email, User.is_active == True).first()
+            if user is None:
+                raise credentials_exception
+            return user
+        except Exception as e:
+            # Error con token JWT, no limpiar sesión
+            print(f"Error al verificar token JWT: {e}")
     
     raise credentials_exception
 
@@ -152,8 +171,9 @@ def get_user_permissions(user: User) -> dict:
         for key in permissions:
             permissions[key] = True
     elif user.role == UserRole.STAFF:
-        # Staff puede gestionar dispositivos y generar reportes
+        # Staff puede gestionar empresas, usuarios, dispositivos y generar reportes
         permissions.update({
+            "can_manage_companies": True,
             "can_manage_users": True,
             "can_manage_all_devices": True,
             "can_view_reports": True,

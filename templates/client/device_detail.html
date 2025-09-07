@@ -7,8 +7,13 @@
     <div>
         <nav aria-label="breadcrumb">
             <ol class="breadcrumb">
-                <li class="breadcrumb-item"><a href="{{ url_for('client_devices') }}">Mis Equipos</a></li>
-                <li class="breadcrumb-item active">{{ device.name }}</li>
+                <li class="breadcrumb-item">
+                    <a href="{{ url_for('client_dashboard') }}"><i class="bi bi-house"></i> Dashboard</a>
+                </li>
+                <li class="breadcrumb-item">
+                    <a href="{{ url_for('client_devices') }}"><i class="bi bi-laptop"></i> Mis Equipos</a>
+                </li>
+                <li class="breadcrumb-item active" aria-current="page">{{ device.name }}</li>
             </ol>
         </nav>
         <h1><i class="bi bi-laptop"></i> {{ device.name }}</h1>

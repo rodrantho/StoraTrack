@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+
+{% block title %}{% if company %}Editar Empresa - {{ company.name }}{% else %}Nueva Empresa{% endif %}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h3 class="card-title">{% if company %}Editar Empresa{% else %}Nueva Empresa{% endif %}</h3>
+                    <a href="/admin/companies" class="btn btn-secondary btn-sm">
+                        <i class="fas fa-arrow-left"></i> Cancelar
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if error %}
+                    <div class="alert alert-danger" role="alert">
+                        {{ error }}
+                    </div>
+                    {% endif %}
+                    
+                    <form method="post" action="{% if company %}/admin/companies/{{ company.id }}/edit{% else %}/admin/companies/new{% endif %}">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="name">Nombre de la Empresa *</label>
+                                    <input type="text" class="form-control" id="name" name="name" 
+                                           value="{{ company.name if company else '' }}" required>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="rut_id">RUT/ID *</label>
+                                    <input type="text" class="form-control" id="rut_id" name="rut_id" 
+                                           value="{{ company.rut_id if company else '' }}" required>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="contact_name">Nombre de Contacto</label>
+                                    <input type="text" class="form-control" id="contact_name" name="contact_name" 
+                                           value="{{ company.contact_name or '' if company else '' }}">
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="email">Email</label>
+                                    <input type="email" class="form-control" id="email" name="email" 
+                                           value="{{ company.email or '' if company else '' }}">
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="phone">Teléfono</label>
+                                    <input type="text" class="form-control" id="phone" name="phone" 
+                                           value="{{ company.phone or '' if company else '' }}">
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="address">Dirección</label>
+                                    <textarea class="form-control" id="address" name="address" rows="3">{{ company.address or '' if company else '' }}</textarea>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="costo_base_default">Costo Base por Defecto</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">$</span>
+                                        <input type="number" class="form-control" id="costo_base_default" 
+                                               name="costo_base_default" step="0.01" min="0" 
+                                               value="{{ company.costo_base_default or 0 if company else 0 }}">
+                                    </div>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="costo_diario_default">Costo Diario por Defecto</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">$</span>
+                                        <input type="number" class="form-control" id="costo_diario_default" 
+                                               name="costo_diario_default" step="0.01" min="0" 
+                                               value="{{ company.costo_diario_default or 0 if company else 0 }}">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        {% if company %}
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="form-group">
+                                    <h6>Información del Sistema</h6>
+                                    <p><strong>Creado:</strong> {{ company.created_at.strftime('%d/%m/%Y %H:%M') if company.created_at else 'N/A' }}</p>
+                                    <p><strong>Actualizado:</strong> {{ company.updated_at.strftime('%d/%m/%Y %H:%M') if company.updated_at else 'N/A' }}</p>
+                                    <p><strong>Usuarios:</strong> {{ company.users|length if company.users else 0 }}</p>
+                                    <p><strong>Dispositivos:</strong> {{ company.devices|length if company.devices else 0 }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        <div class="row">
+                            <div class="col-12">
+                                <hr>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save"></i> {% if company %}Guardar Cambios{% else %}Crear Empresa{% endif %}
+                                </button>
+                                <a href="{% if company %}/admin/companies/{{ company.id }}{% else %}/admin/companies{% endif %}" class="btn btn-secondary">
+                                    <i class="fas fa-times"></i> Cancelar
+                                </a>
+                                {% if company %}
+                                <button type="button" class="btn btn-danger" onclick="confirmDelete('{{ company.name }}', '/admin/companies/{{ company.id }}/delete')">
+                                    <i class="fas fa-trash"></i> Eliminar Empresa
+                                </button>
+                                <!-- Botón alternativo para depuración -->
+                                <a href="/admin/companies/{{ company.id }}/delete" class="btn btn-outline-danger">
+                                    <i class="fas fa-trash"></i> Eliminar (Directo)
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Validación del formulario
+document.querySelector('form').addEventListener('submit', function(e) {
+    const name = document.getElementById('name').value.trim();
+    const rutId = document.getElementById('rut_id').value.trim();
+    
+    if (!name) {
+        e.preventDefault();
+        alert('El nombre de la empresa es obligatorio');
+        return false;
+    }
+    
+    if (!rutId) {
+        e.preventDefault();
+        alert('El RUT/ID es obligatorio');
+        return false;
+    }
+});
+
+// Función para confirmar eliminación
+function confirmDelete(companyName, deleteUrl) {
+    console.log(`Intentando eliminar empresa: ${companyName}, URL: ${deleteUrl}`);
+    alert(`Debug: Intentando eliminar empresa: ${companyName}, URL: ${deleteUrl}`);
+    
+    if (confirm(`¿Estás seguro de que deseas eliminar la empresa "${companyName}"?\n\nEsta acción no se puede deshacer y eliminará todos los datos asociados.`)) {
+        console.log('Usuario confirmó la eliminación');
+        
+        try {
+            // Crear formulario para enviar POST directamente
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = deleteUrl;
+            
+            console.log('Formulario creado:', form);
+            
+            // No es necesario el campo _method ya que la ruta está configurada como POST
+            
+            document.body.appendChild(form);
+            console.log('Formulario añadido al documento');
+            
+            // Enviar el formulario
+            console.log('Enviando formulario...');
+            form.submit();
+            console.log('Formulario enviado');
+        } catch (error) {
+            console.error('Error al enviar el formulario:', error);
+            alert('Error al enviar el formulario: ' + error.message);
+        }
+    } else {
+        console.log('Usuario canceló la eliminación');
+    }
+}
+</script>
+{% endblock %}

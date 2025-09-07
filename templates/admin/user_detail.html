@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block title %}Detalles de Usuario - {{ user.full_name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h3 class="card-title">Detalles de Usuario</h3>
+                    <div>
+                        {% if current_user.role.value == 'superadmin' %}
+                        <a href="/admin/users/{{ user.id }}/edit" class="btn btn-primary btn-sm">
+                            <i class="fas fa-edit"></i> Editar
+                        </a>
+                        {% endif %}
+                        <a href="/admin/users" class="btn btn-secondary btn-sm">
+                            <i class="fas fa-arrow-left"></i> Volver
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5>Información Personal</h5>
+                            <table class="table table-borderless">
+                                <tr>
+                                    <td><strong>ID:</strong></td>
+                                    <td>{{ user.id }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Nombre Completo:</strong></td>
+                                    <td>{{ user.full_name }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Email:</strong></td>
+                                    <td>{{ user.email }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Rol:</strong></td>
+                                    <td>
+                                        <span class="badge badge-{% if user.role.value == 'superadmin' %}danger{% elif user.role.value == 'staff' %}warning{% else %}info{% endif %}">
+                                            {{ user.role.value }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Estado:</strong></td>
+                                    <td>
+                                        <span class="badge badge-{% if user.is_active %}success{% else %}secondary{% endif %}">
+                                            {% if user.is_active %}Activo{% else %}Inactivo{% endif %}
+                                        </span>
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <h5>Información de la Empresa</h5>
+                            <table class="table table-borderless">
+                                <tr>
+                                    <td><strong>Empresa:</strong></td>
+                                    <td>
+                                        {% if user.company %}
+                                            <a href="/admin/companies/{{ user.company.id }}">{{ user.company.name }}</a>
+                                        {% else %}
+                                            <span class="text-muted">Sin empresa asignada</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Fecha de Creación:</strong></td>
+                                    <td>{{ user.created_at.strftime('%d/%m/%Y %H:%M') if user.created_at else 'N/A' }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Última Actualización:</strong></td>
+                                    <td>{{ user.updated_at.strftime('%d/%m/%Y %H:%M') if user.updated_at else 'N/A' }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Último Login:</strong></td>
+                                    <td>{{ user.last_login.strftime('%d/%m/%Y %H:%M') if user.last_login else 'Nunca' }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    {% if current_user.role.value == 'superadmin' and user.id != current_user.id %}
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <h5 class="text-danger">Zona de Peligro</h5>
+                            <form method="post" action="/admin/users/{{ user.id }}/delete" 
+                                  onsubmit="return confirm('¿Está seguro de que desea desactivar este usuario?')">
+                                <button type="submit" class="btn btn-danger">
+                                    <i class="fas fa-user-times"></i> Desactivar Usuario
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

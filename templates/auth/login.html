@@ -100,34 +100,7 @@
                 </button>
             </form>
             
-            <!-- Demo Credentials -->
-            <div class="divider">
-                <span>Credenciales de Prueba</span>
-            </div>
-            
-            <div class="row g-2">
-                <div class="col-12">
-                    <button type="button" class="btn btn-outline-secondary btn-sm w-100" 
-                            onclick="fillCredentials('admin@admin.com', 'admin')">
-                        <i class="bi bi-person-gear me-1"></i>
-                        Superadmin
-                    </button>
-                </div>
-                <div class="col-6">
-                    <button type="button" class="btn btn-outline-info btn-sm w-100" 
-                            onclick="fillCredentials('staff@demo.com', 'staff123')">
-                        <i class="bi bi-person-badge me-1"></i>
-                        Staff
-                    </button>
-                </div>
-                <div class="col-6">
-                    <button type="button" class="btn btn-outline-success btn-sm w-100" 
-                            onclick="fillCredentials('cliente@demo.com', 'cliente123')">
-                        <i class="bi bi-person me-1"></i>
-                        Cliente
-                    </button>
-                </div>
-            </div>
+
             
             <!-- Additional Info -->
             <div class="mt-4 text-center">
@@ -192,12 +165,6 @@
 
 {% block extra_scripts %}
 <script>
-    // Fill demo credentials
-    function fillCredentials(email, password) {
-        document.getElementById('email').value = email;
-        document.getElementById('password').value = password;
-        document.getElementById('email').focus();
-    }
     
     // API Login functionality
     document.getElementById('apiLoginForm').addEventListener('submit', async function(e) {

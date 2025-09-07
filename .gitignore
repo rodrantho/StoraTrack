@@ -213,6 +213,7 @@ Desktop.ini
 *.sqlite3
 test.db
 storatrack.db
+database/storatrack.db
 storatrack_test.db
 
 # Log files

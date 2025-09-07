@@ -85,30 +85,63 @@ class UserLogin(BaseModel):
     email: EmailStr
     password: str
 
+class UserProfileUpdate(BaseModel):
+    full_name: Optional[str] = None
+    email: Optional[EmailStr] = None
+    current_password: Optional[str] = None
+    new_password: Optional[str] = None
+    confirm_password: Optional[str] = None
+    
+    @validator('confirm_password')
+    def passwords_match(cls, v, values):
+        if 'new_password' in values and v != values['new_password']:
+            raise ValueError('Las contraseñas no coinciden')
+        return v
+    
+    @validator('new_password')
+    def validate_new_password(cls, v, values):
+        if v and len(v) < 6:
+            raise ValueError('La contraseña debe tener al menos 6 caracteres')
+        return v
+
 # Location schemas
 class LocationBase(BaseModel):
     name: str
     description: Optional[str] = None
+    code: Optional[str] = None
     parent_id: Optional[int] = None
+    location_type: Optional[str] = "AREA"
     level: int = 1
+    max_capacity: Optional[int] = None
+    shelf_count: Optional[int] = None
+    sort_order: int = 0
 
 class LocationCreate(LocationBase):
-    company_id: int
+    company_id: Optional[int] = None  # Empresa principal (opcional)
+    company_ids: Optional[List[int]] = []  # Empresas con acceso
 
 class LocationUpdate(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
+    code: Optional[str] = None
     parent_id: Optional[int] = None
+    location_type: Optional[str] = None
     level: Optional[int] = None
+    max_capacity: Optional[int] = None
+    shelf_count: Optional[int] = None
+    sort_order: Optional[int] = None
+    company_id: Optional[int] = None
+    company_ids: Optional[List[int]] = None
     is_active: Optional[bool] = None
 
 class Location(LocationBase):
     id: int
-    company_id: int
+    company_id: Optional[int] = None
     created_at: datetime
     updated_at: datetime
     is_active: bool
     children: List['Location'] = []
+    companies: List['Company'] = []  # Empresas con acceso
 
     class Config:
         orm_mode = True

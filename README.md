@@ -154,9 +154,7 @@ Ver `.env.example` para todas las opciones disponibles.
 
 Después de la instalación, accede a:
 - **URL**: http://localhost:8000
-- **Superadmin**: admin@storatrack.com / admin123
-- **Staff**: staff@storatrack.com / staff123
-- **Cliente**: cliente1@techcorp.cl / cliente123
+- Utiliza las credenciales configuradas durante la inicialización de la base de datos
 
 ### Flujo de Trabajo Típico
 
